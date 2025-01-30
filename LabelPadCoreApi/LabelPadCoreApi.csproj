@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <UserSecretsId>550499dd-c549-447c-9803-e96401f8baaf</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Migrations\20200808121137_parkingbaynos.cs" />
+    <Compile Remove="Migrations\20200808121137_parkingbaynos.Designer.cs" />
+    <Compile Remove="Migrations\20200810062553_parkingbaynokey.cs" />
+    <Compile Remove="Migrations\20200810062553_parkingbaynokey.Designer.cs" />
+    <Compile Remove="Migrations\20200811120202_visitorbay.cs" />
+    <Compile Remove="Migrations\20200811120202_visitorbay.Designer.cs" />
+    <Compile Remove="Migrations\20200811121312_visitorbay.cs" />
+    <Compile Remove="Migrations\20200811121312_visitorbay.Designer.cs" />
+    <Compile Remove="Migrations\20200910105504_endtimesession.cs" />
+    <Compile Remove="Migrations\20200910105504_endtimesession.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="5.0.2" />
+    <PackageReference Include="System.Data.Common" Version="4.3.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LabelPad.Domain\LabelPad.Domain.csproj" />
+    <ProjectReference Include="..\LabelPad.Repository\LabelPad.Repository.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include=".well-known\" />
+    <Folder Include="TenantIdentityProofFiles\" />
+    <Folder Include="TenantResidencyFiles\" />
+    <Folder Include="ProfileImages\" />
+    <Folder Include="Uploads\" />
+  </ItemGroup>
+
+
+</Project>
