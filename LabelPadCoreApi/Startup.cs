@@ -21,6 +21,7 @@ using LabelPad.Repository.TenantManagement;
 using LabelPad.Repository.VisitorParkingManagement;
 using LabelPad.Repository.ReportManagement;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using LabelPad.Repository.OperatorManagement;
 
 namespace LabelPadCoreApi
 {
@@ -85,6 +86,7 @@ namespace LabelPadCoreApi
             services.AddScoped<ITenantRepository, TenantRepository>();
             services.AddScoped<IVisitorParkingRepository, VisitorParkingRepository>();
             services.AddScoped<IReportRepository, ReportRepository>();
+            services.AddScoped<IOperatorRepository, OperatorRepository>();
             services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo() { Title = "Smart Permit API", Version = "v1" });
