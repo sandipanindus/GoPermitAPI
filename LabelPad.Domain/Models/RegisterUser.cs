@@ -48,6 +48,7 @@ namespace LabelPad.Domain.Models
         public string ProfilePath { get; set; }
         public bool IsAdminCreated { get; set; }
         public bool UpdateEnddate { get; set; }
+        public bool IsApproved { get; set; }
         public ICollection<VehicleRegistration> VehicleRegistrations { get; set; }
         public ICollection<Support> Supports { get; set; }
         public ICollection<BayConfig> BayConfigs { get; set; }

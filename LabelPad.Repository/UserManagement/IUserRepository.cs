@@ -1,5 +1,6 @@
-﻿using LabelPad.Domain.ApplicationClasses;
-using LabelPad.Domain.Models;
+﻿using LabelPad.Domain.Models;
+using LabelPad.Domain.ApplicationClasses;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.SymbolStore;
@@ -22,13 +23,16 @@ namespace LabelPad.Repository.UserManagement
         bool GetExistsUser(AddUserAc addUserAc);
         Task<dynamic> DeleteUser(int Id);
         Task<dynamic> UpdateProfile(UpdateRegisterUserAc objinput);
-        Task<dynamic> UpdateProfileUploads(UpdateRegisterUserAc objinput); 
-         Task<dynamic> UpdateUserProfile(UpdateRegisterUser objinput);
+        Task<dynamic> UpdateProfileUploads(UpdateRegisterUserAc objinput);
+        Task<dynamic> UpdateUserStatus(int Id);
+        Task<dynamic> UpdateUserProfile(UpdateRegisterUser objinput);
         Task<dynamic> AddTenant(UpdateRegisterUserAc model);
         //void Cancelwhitelistvehicle(int siteId, string vrm);
         void whitelistvehicle(int siteId, string vrm);
         bool GetTenant(UpdateRegisterUserAc addRegister);
        Task<dynamic> GetSearchUsers(int PageNo, int PageSize, string FirstName, string LastName, string Email,string SiteName, int LoginId, int RoleId, int SiteId);
-        Task<dynamic> GetSearchTenants(int PageNo, int PageSize, string FirstName, string LastName, string Email, string MobileNumber,string SiteName, int SiteId, string VRM);
+        Task<dynamic> GetSearchTenants(int PageNo, int PageSize, string FirstName, string LastName, string Email, string MobileNumber, string SiteName, int SiteId, string VRM);
+        Task<dynamic> BulkInsertUsersFromExcel(IFormFile file);
+        bool SendEmail(string EmailId, string User, string Subject, string Body, string Headeraname);
     }
 }

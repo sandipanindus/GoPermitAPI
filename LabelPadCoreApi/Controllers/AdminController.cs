@@ -123,7 +123,7 @@ namespace LabelPadCoreApi.Controllers
             try
             {
                 //AppLogs.InfoLogs("DeleteRole Method was started,Controller:Admin");
-                var result = await _userRepository.GetSearchTenants(PageNo, PageSize, FirstName, LastName, Email, MobileNumber, SiteName, SiteId,VRM);
+                var result = await _userRepository.GetSearchTenants(PageNo, PageSize, FirstName, LastName, Email, MobileNumber, SiteName, SiteId, VRM);
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
@@ -1116,12 +1116,12 @@ namespace LabelPadCoreApi.Controllers
         /// <param name="TenantId"></param>
         /// <returns></returns>
         [HttpGet("GetNotificatiosList")]
-        public async Task<IActionResult> GetNotificatiosList( int TenantId)
+        public async Task<IActionResult> GetNotificatiosList(int TenantId)
         {
             try
             {
                 //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
-                var logs = await _siteRepository.GetNotificatiosList( TenantId);
+                var logs = await _siteRepository.GetNotificatiosList(TenantId);
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = logs });
             }
             catch (Exception ex)
@@ -1273,83 +1273,83 @@ namespace LabelPadCoreApi.Controllers
                 Guid guid;
                 //if (files.Count > 0)
                 //{
-                    // for (int i = 0; i < files.Count; i++)
-                    // {
-                    // if ()
-                    // {
-                    var file = Request.Form.Files["fileupload"];
-                    if (file != null)
+                // for (int i = 0; i < files.Count; i++)
+                // {
+                // if ()
+                // {
+                var file = Request.Form.Files["fileupload"];
+                if (file != null)
+                {
+                    filefolder = _configuration["ProfileUrl"];
+                    folderName = Path.Combine("ProfileImages");
+                    filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                    guid = Guid.NewGuid();
+                    uniqueFileName = guid + "-" + file.FileName;
+                    objinput.ProfilePath = filefolder + uniqueFileName;
+
+                    if (!Directory.Exists(filePath))
                     {
-                        filefolder = _configuration["ProfileUrl"];
-                        folderName = Path.Combine("ProfileImages");
-                        filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
-                        guid = Guid.NewGuid();
-                        uniqueFileName = guid + "-" + file.FileName;
-                        objinput.ProfilePath = filefolder + uniqueFileName;
-
-                        if (!Directory.Exists(filePath))
-                        {
-                            Directory.CreateDirectory(filePath);
-                        }
-
-
-                        using (var fileStream = new FileStream(Path.Combine(filePath, uniqueFileName), FileMode.Create))
-                        {
-                            file.CopyTo(fileStream);
-                        }
-                    }
-                    file= Request.Form.Files["fileupload1"];
-                    if (file!=null)
-                    {
-                        filefolder = _configuration["TenantResidencyPath"];
-                        folderName = Path.Combine("TenantResidencyFiles");
-                        filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
-                        guid = Guid.NewGuid();
-                        uniqueFileName = guid + "-" + file.FileName;
-                        objinput.ResidencyProof = filefolder + uniqueFileName;
-
-                        if (!Directory.Exists(filePath))
-                        {
-                            Directory.CreateDirectory(filePath);
-                        }
-
-
-                        using (var fileStream = new FileStream(Path.Combine(filePath, uniqueFileName), FileMode.Create))
-                        {
-                            file.CopyTo(fileStream);
-                        }
-                    }
-                    file = Request.Form.Files["fileupload2"];
-                    if (file!=null)
-                    {
-                        filefolder = _configuration["IdentityProofPath"];
-                        folderName = Path.Combine("TenantIdentityProofFiles");
-                        filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
-                        guid = Guid.NewGuid();
-                        uniqueFileName = guid + "-" + file.FileName;
-                        objinput.IdentityProof = filefolder + uniqueFileName;
-
-                        if (!Directory.Exists(filePath))
-                        {
-                            Directory.CreateDirectory(filePath);
-                        }
-
-
-                        using (var fileStream = new FileStream(Path.Combine(filePath, uniqueFileName), FileMode.Create))
-                        {
-                            file.CopyTo(fileStream);
-                        }
+                        Directory.CreateDirectory(filePath);
                     }
 
 
+                    using (var fileStream = new FileStream(Path.Combine(filePath, uniqueFileName), FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);
+                    }
+                }
+                file = Request.Form.Files["fileupload1"];
+                if (file != null)
+                {
+                    filefolder = _configuration["TenantResidencyPath"];
+                    folderName = Path.Combine("TenantResidencyFiles");
+                    filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                    guid = Guid.NewGuid();
+                    uniqueFileName = guid + "-" + file.FileName;
+                    objinput.ResidencyProof = filefolder + uniqueFileName;
+
+                    if (!Directory.Exists(filePath))
+                    {
+                        Directory.CreateDirectory(filePath);
+                    }
+
+
+                    using (var fileStream = new FileStream(Path.Combine(filePath, uniqueFileName), FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);
+                    }
+                }
+                file = Request.Form.Files["fileupload2"];
+                if (file != null)
+                {
+                    filefolder = _configuration["IdentityProofPath"];
+                    folderName = Path.Combine("TenantIdentityProofFiles");
+                    filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                    guid = Guid.NewGuid();
+                    uniqueFileName = guid + "-" + file.FileName;
+                    objinput.IdentityProof = filefolder + uniqueFileName;
+
+                    if (!Directory.Exists(filePath))
+                    {
+                        Directory.CreateDirectory(filePath);
+                    }
+
+
+                    using (var fileStream = new FileStream(Path.Combine(filePath, uniqueFileName), FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);
+                    }
+                }
 
 
 
 
-                    // }
 
 
-                    // }
+                // }
+
+
+                // }
 
 
 
@@ -1495,7 +1495,7 @@ namespace LabelPadCoreApi.Controllers
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key = SendEmail(addUser.Email, addUser.FirstName, "Set Password from Go permit", body, "GOPERMIT_Set Password");
+                        bool key = _userRepository.SendEmail(addUser.Email, addUser.FirstName, "Set Password from Go permit", body, "GOPERMIT_Set Password");
                         if (key == true)
                         {
                             return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
@@ -1533,7 +1533,7 @@ namespace LabelPadCoreApi.Controllers
             {
                 return BadRequest(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = zatpark });
             }
-            
+
             return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = zatpark });
         }
         #endregion
@@ -1574,7 +1574,7 @@ namespace LabelPadCoreApi.Controllers
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key = SendEmail(addUser.Email, addUser.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
+                        bool key = _userRepository.SendEmail(addUser.Email, addUser.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
                         if (key == true)
                         {
                             return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = addUser });
@@ -1620,8 +1620,8 @@ namespace LabelPadCoreApi.Controllers
 
                 Guid guid;
 
-                
-                 var file = Request.Form.Files["fileupload1"];
+
+                var file = Request.Form.Files["fileupload1"];
                 if (file != null)
                 {
                     filefolder = _configuration["TenantResidencyPath"];
@@ -1669,15 +1669,7 @@ namespace LabelPadCoreApi.Controllers
                 //objinput.ProfilePath = filefolder + uniqueFileName;
 
                 var result = _userRepository.UpdateProfileUploads(objinput);
-                if (result != null)
-                {
-                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
-                }
-                else
-                {
-                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Error occured", Result = null });
-                }
-
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
             {
@@ -1686,7 +1678,26 @@ namespace LabelPadCoreApi.Controllers
         }
         #endregion
 
-     
+        #region ApproveTenant
+        /// <summary>
+        /// method to update the tenant status
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpPost("ApproveTenant")]
+        public async Task<IActionResult> ApproveTenant(int Id)
+        {
+            try
+            {
+                var result = _userRepository.UpdateUserStatus(Id);
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+        #endregion
 
         #region AddBulkTenants
         /// <summary>
@@ -1726,7 +1737,7 @@ namespace LabelPadCoreApi.Controllers
                             myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                             string body = myString;
-                            bool key = SendEmail(addUser[i].Email, addUser[i].FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
+                            bool key = _userRepository.SendEmail(addUser[i].Email, addUser[i].FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
                             //if (key == true)
                             //{
                             //    return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
@@ -1823,7 +1834,7 @@ namespace LabelPadCoreApi.Controllers
                         //  myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key = SendEmail(user.Email, user.FirstName, "Welcome ", body, "GOPERMIT_welcome");
+                        bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Welcome ", body, "GOPERMIT_welcome");
                     }
                 }
                 var result = await _userRepository.UpdateTenantUser(addUser);
@@ -2309,7 +2320,7 @@ namespace LabelPadCoreApi.Controllers
                             folderName = Path.Combine("EmailHtml", "Welcomemailuser.html");
                         }
                     }
-                    
+
                     var filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
                     StreamReader reader = new StreamReader(filePath);
 
@@ -2322,7 +2333,7 @@ namespace LabelPadCoreApi.Controllers
                     myString = myString.Replace("%{#{Name}#}%", user.FirstName + " " + user.LastName);
 
                     string body = myString;
-                    bool key = SendEmail(user.Email, user.FirstName, "Welcome to Go Permit !", body, "GOPERMIT_Welcome");
+                    bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Welcome to Go Permit !", body, "GOPERMIT_Welcome");
                     return Ok(new ApiServiceResponse() { Status = "200", Message = "Your password was generated", Result = null });
                 }
                 else
@@ -2415,7 +2426,7 @@ namespace LabelPadCoreApi.Controllers
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key = SendEmail(user.Email, user.FirstName, "Password Verification from Go permit", body, "GOPERMIT_Verify Password");
+                        bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Password Verification from Go permit", body, "GOPERMIT_Verify Password");
                         if (key == true)
                         {
                             return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
@@ -2482,7 +2493,7 @@ namespace LabelPadCoreApi.Controllers
                     myString = myString.Replace("%{#{Name}#}%", name);
                     myString = myString.Replace("%{#{Response}#}%", obj.Issue);
                     string body = myString;
-                    bool key = SendEmail(email, name, obj.Subject, body, "GOPERMIT_Responce");
+                    bool key = _userRepository.SendEmail(email, name, obj.Subject, body, "GOPERMIT_Responce");
                     if (key == true)
                     {
                         return Ok(new ApiServiceResponse() { Status = "200", Message = "Response send successfully", Result = null });
@@ -2535,7 +2546,7 @@ namespace LabelPadCoreApi.Controllers
                     // string dt = DateTime.Now.ToString("MM.dd.yyyy");
                     //   myString = myString.Replace("%{#{Datetime}#}%", dt);
                     string body = myString;
-                    bool key = SendEmail(user.Email, user.FirstName, "Welcome to Go Permit !", body, "GOPERMIT_Welocome");
+                    bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Welcome to Go Permit !", body, "GOPERMIT_Welocome");
                     if (key == true)
                     {
                         return Ok(new ApiServiceResponse() { Status = "200", Message = "Your mail activation done", Result = null });
@@ -2754,7 +2765,7 @@ namespace LabelPadCoreApi.Controllers
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key = SendEmail(model.Email, model.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
+                        bool key = _userRepository.SendEmail(model.Email, model.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
                         if (key == true)
                         {
                             return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
@@ -2835,7 +2846,7 @@ namespace LabelPadCoreApi.Controllers
                             myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                             string body = myString;
-                            bool key = SendEmail(addRegister.Email, addRegister.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
+                            bool key = _userRepository.SendEmail(addRegister.Email, addRegister.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
                         }
                         else
                         {
@@ -2850,7 +2861,7 @@ namespace LabelPadCoreApi.Controllers
                             // string dt = DateTime.Now.ToString("MM.dd.yyyy");
                             //  myString = myString.Replace("%{#{Datetime}#}%", dt);
                             string body = myString;
-                            bool key = SendEmail(user.Email, user.FirstName, "Welcome to Go Permit!", body, "GOPERMIT_Welcome");
+                            bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Welcome to Go Permit!", body, "GOPERMIT_Welcome");
                             if (key == true)
                             {
                                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Tenant registered successfully", Result = null });
@@ -2874,56 +2885,56 @@ namespace LabelPadCoreApi.Controllers
         }
         #endregion
 
-        #region SendEmail1
-        /// <summary>
-        /// method to send the mail
-        /// </summary>
-        /// <param name="EmailId"></param>
-        /// <param name="User"></param>
-        /// <param name="EmailCode"></param>
-        /// <param name="ActivateLink"></param>
-        /// <returns></returns>
-        bool SendEmail(string EmailId, string User, string Subject, string Body, string Headeraname)
-        {
+        //#region SendEmail1
+        ///// <summary>
+        ///// method to send the mail
+        ///// </summary>
+        ///// <param name="EmailId"></param>
+        ///// <param name="User"></param>
+        ///// <param name="EmailCode"></param>
+        ///// <param name="ActivateLink"></param>
+        ///// <returns></returns>
+        //bool SendEmail(string EmailId, string User, string Subject, string Body, string Headeraname)
+        //{
 
-            SmtpClient client = new SmtpClient();
-            //  client.DeliveryMethod = SmtpDeliveryMethod.Network;
-            client.EnableSsl = Convert.ToBoolean(_configuration["SSL"]);
-            client.Host = _configuration["Host"];
-            client.Port = Convert.ToInt32(_configuration["Port"]);
+        //    SmtpClient client = new SmtpClient();
+        //    //  client.DeliveryMethod = SmtpDeliveryMethod.Network;
+        //    client.EnableSsl = Convert.ToBoolean(_configuration["SSL"]);
+        //    client.Host = _configuration["Host"];
+        //    client.Port = Convert.ToInt32(_configuration["Port"]);
 
-            NetworkCredential credentials = new NetworkCredential();
-            client.UseDefaultCredentials = false;
-            credentials.UserName = _configuration["AdminMail"];
-            credentials.Password = _configuration["Password"];
-            client.Credentials = credentials;
+        //    NetworkCredential credentials = new NetworkCredential();
+        //    client.UseDefaultCredentials = false;
+        //    credentials.UserName = _configuration["AdminMail"];
+        //    credentials.Password = _configuration["Password"];
+        //    client.Credentials = credentials;
 
 
-            MailMessage mailMessage = new MailMessage();
-            mailMessage.From = new MailAddress(_configuration["AdminMail"],
-               Headeraname);
-            mailMessage.To.Add(new MailAddress(EmailId));
+        //    MailMessage mailMessage = new MailMessage();
+        //    mailMessage.From = new MailAddress(_configuration["AdminMail"],
+        //       Headeraname);
+        //    mailMessage.To.Add(new MailAddress(EmailId));
 
-            mailMessage.Subject = Subject;
-            mailMessage.IsBodyHtml = true;
-            string Body1 = Body;
+        //    mailMessage.Subject = Subject;
+        //    mailMessage.IsBodyHtml = true;
+        //    string Body1 = Body;
 
-            mailMessage.Body = Body1;
-            try
-            {
-                //AppLogs.InfoLogs("Start  test email sending AT client.Send(mailMessage) STATEMENT, Login Controller FORM, Method :SendMail");
-                client.Send(mailMessage);
-                //AppLogs.InfoLogs("End  test email sending AT client.Send(mailMessage) STATEMENT, Login Controller FORM, Method :SendMail");
+        //    mailMessage.Body = Body1;
+        //    try
+        //    {
+        //        //AppLogs.InfoLogs("Start  test email sending AT client.Send(mailMessage) STATEMENT, Login Controller FORM, Method :SendMail");
+        //        client.Send(mailMessage);
+        //        //AppLogs.InfoLogs("End  test email sending AT client.Send(mailMessage) STATEMENT, Login Controller FORM, Method :SendMail");
 
-                return true;
-            }
-            catch (Exception ex)
-            {
-                //AppLogs.InfoLogs("Error  Sending Mail , Login FORM, Method :SendMail" + ex.ToString());
-                return true;
-            }
-        }
-        #endregion
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //AppLogs.InfoLogs("Error  Sending Mail , Login FORM, Method :SendMail" + ex.ToString());
+        //        return true;
+        //    }
+        //}
+        //#endregion
 
         #region SendEmailAdmin
         /// <summary>
@@ -3077,7 +3088,7 @@ namespace LabelPadCoreApi.Controllers
             try
             {
                 //AppLogs.InfoLogs("GetUserById Method was started,Controller:Admin");
-                bool result = SendEmail(EmailId, User, Subject, Body, Headername);
+                bool result = _userRepository.SendEmail(EmailId, User, Subject, Body, Headername);
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
@@ -3136,5 +3147,34 @@ namespace LabelPadCoreApi.Controllers
             }
         }
         #endregion
+
+        [HttpPost("BulkUploadTenants")]
+        public async Task<IActionResult> BulkUploadTenants(IFormFile file)
+        {
+            AppLogs.InfoLogs("BulkUploadTenants API called at: " + DateTime.UtcNow);
+
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    AppLogs.InfoLogs("BulkUploadTenants: Invalid file received.");
+                    return BadRequest(new { Status = "-100", Message = "Invalid file" });
+                }
+
+                AppLogs.InfoLogs($"Processing file: {file.FileName}, Size: {file.Length} bytes");
+
+                var response = await _userRepository.BulkInsertUsersFromExcel(file);
+
+                AppLogs.InfoLogs($"BulkUploadTenants: Response - {Newtonsoft.Json.JsonConvert.SerializeObject(response)}");
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                string errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                AppLogs.InfoLogs("BulkUploadTenants: Error occurred - " + errorMessage);
+                return StatusCode(500, new { Status = "-500", Message = "Internal server error", Error = errorMessage });
+            }
+        }
+
     }
 }
