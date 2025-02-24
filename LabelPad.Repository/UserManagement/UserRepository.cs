@@ -626,24 +626,24 @@ namespace LabelPad.Repository.UserManagement
                         {
                             if (parkingbayno.RegisterUserId != 0)
                             {
-                                string startdate = addUser.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                                string enddate = addUser.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                                ParkingBayNo parkingobj = new ParkingBayNo();
-                                parkingobj.IsActive = true;
-                                parkingobj.IsDeleted = false;
-                                parkingobj.MaxVehiclesPerBay = Convert.ToInt32(addUser.BayConfigs[i].vehiclesperbay);
-                                parkingobj.ParkingBayId = parkingbayno.ParkingBayId;
-                                parkingobj.RegisterUserId = user.Id;
-                                parkingobj.Section = parkingbayno.Section;
-                                parkingobj.SiteId = parkingbayno.SiteId;
-                                parkingobj.StartDate = Convert.ToDateTime(startdate);
-                                parkingobj.EndDate = Convert.ToDateTime(enddate);
-                                parkingobj.BayName = parkingbayno.BayName;
-                                parkingobj.CreatedBy = 1;
-                                parkingobj.CreatedOn = DateTime.Now;
-                                parkingobj.Status = true;
-                                _dbContext.ParkingBayNos.Add(parkingobj);
-                                _dbContext.SaveChanges();
+                                //string startdate = addUser.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
+                                //string enddate = addUser.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
+                                //ParkingBayNo parkingobj = new ParkingBayNo();
+                                //parkingobj.IsActive = true;
+                                //parkingobj.IsDeleted = false;
+                                //parkingobj.MaxVehiclesPerBay = Convert.ToInt32(addUser.BayConfigs[i].vehiclesperbay);
+                                //parkingobj.ParkingBayId = parkingbayno.ParkingBayId;
+                                //parkingobj.RegisterUserId = user.Id;
+                                //parkingobj.Section = parkingbayno.Section;
+                                //parkingobj.SiteId = parkingbayno.SiteId;
+                                //parkingobj.StartDate = Convert.ToDateTime(startdate);
+                                //parkingobj.EndDate = Convert.ToDateTime(enddate);
+                                //parkingobj.BayName = parkingbayno.BayName;
+                                //parkingobj.CreatedBy = 1;
+                                //parkingobj.CreatedOn = DateTime.Now;
+                                //parkingobj.Status = true;
+                                //_dbContext.ParkingBayNos.Add(parkingobj);
+                                //_dbContext.SaveChanges();
                                 var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).FirstOrDefault();
                                 if (isParking != null)
                                 {
@@ -726,7 +726,7 @@ namespace LabelPad.Repository.UserManagement
                                 parkingbayno.UpdatedOn = DateTime.Now;
                                 _dbContext.ParkingBayNos.Update(parkingbayno);
                                 _dbContext.SaveChanges();
-                                var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).FirstOrDefault();
+                                var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUser.BayConfigs[i].bayid).FirstOrDefault();
                                 VehicleRegistration vr = null;
                                 if (isParking != null)
                                 {
@@ -811,7 +811,6 @@ namespace LabelPad.Repository.UserManagement
             }
             return new { Message = "User saved successfully" };
         }
-
 
 
         public async Task<dynamic> DeleteUser(int Id)
