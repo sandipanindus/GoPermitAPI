@@ -159,7 +159,9 @@ namespace LabelPad.Repository.SiteManagment
                                      {
                                          registerUserId = Convert.ToString(rw["RegisterUserId"]),
                                          id = Convert.ToString(rw["Id"]),
-                                         bayName = Convert.ToString(rw["BayName"]) + " " + Convert.ToString(rw["FirstName"]) + " " + Convert.ToString(rw["LastName"]),
+                                        // bayName = Convert.ToString(rw["BayName"]) + " " + Convert.ToString(rw["FirstName"]) + " " + Convert.ToString(rw["LastName"]),
+                                         bayName = Convert.ToString(rw["BayName"])
+
 
                                      }).OrderBy(x => x.bayName.LastIndexOfAny(nums))
                                         .ThenBy(x => x.bayName).ToList();
@@ -728,9 +730,6 @@ namespace LabelPad.Repository.SiteManagment
                                 maxvehicle=b.MaxVehiclesPerBay,
                                 registerUserId=l.RegisterUserId
                             }).OrderByDescending(x => x.Id).ToList();
-
-
-
 
             return visitors;
         }

@@ -1120,29 +1120,59 @@ namespace LabelPad.Repository.UserManagement
             int count2 = count1 * PageNo - count1;
             if (RoleId == 1)
             {
-                int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2).Count();
-                double totalpa = (double)totalitems / (double)PageSize;
-                double totalpage = Math.Round(totalpa);
-                var users = (from l in _dbContext.RegisterUsers
-                             join r in _dbContext.Roles on l.RoleId equals r.Id
+                if (SiteId == 0)
+                {
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
 
-                             where l.IsDeleted == false && l.RoleId != 2
-                             select new
-                             {
-                                 l.Id,
-                                 l.FirstName,
-                                 l.LastName,
-                                 l.Email,
-                                 l.MobileNumber,
-                                 l.RoleId,
-                                 RoleName = r.Name,
-                                 TotalItem = totalitems,
-                                 TotalPage = totalpage + 1,
-                                 SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? "NA" : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
-                             }).OrderByDescending(x => x.Id).ToList();
+                                 where l.IsDeleted == false && l.RoleId != 2
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? "NA" : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
 
-                users = users.Skip(count2).Take(count1).ToList();
-                return users;
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                }
+
+                else
+                {
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2 && x.SiteId == SiteId).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+                                 where l.IsDeleted == false && l.RoleId == 2 && l.SiteId == SiteId
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     l.BayConfigs,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? "NA" : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                }
 
             }
             else
