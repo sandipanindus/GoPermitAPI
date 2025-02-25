@@ -2297,6 +2297,7 @@ namespace LabelPad.Repository.UserManagement
                 user.UpdatedOn = DateTime.Now;
                 user.SiteId = addUserAc.SiteId;
                 user.IsActive = addUserAc.Active;
+                user.IsMicrosoftAccount = addUserAc.IsMicrosoftAccount;
                 _dbContext.RegisterUsers.Update(user);
                 await _dbContext.SaveChangesAsync();
                 return new { Message = "User updated successfully" };

@@ -104,6 +104,59 @@ namespace LabelPadCoreApi.Controllers
                 return StatusCode(500, "An internal server error occurred.");
             }
         }
+        [HttpPut("UpdateOperators")]
+        public async Task<IActionResult> UpdateOperators(
+  [FromForm] OperatorDetails operatorDetail, // Use [FromForm] instead of [FromBody]
+  IFormFile Profiles, // File input for profile image
+  IFormFile HelpImages // File input for help image
+)
+        {
+            try
+            {
+                if (operatorDetail == null)
+                {
+                    return BadRequest("Operator details cannot be null.");
+                }
+
+                // Validate required fields
+                if (string.IsNullOrEmpty(operatorDetail.FirstName) ||
+                    string.IsNullOrEmpty(operatorDetail.LastName) ||
+                    string.IsNullOrEmpty(operatorDetail.Email))
+                {
+                    return BadRequest("First Name, Last Name, and Email are required.");
+                }
+
+                // Process profile image (if provided)
+                if (Profiles != null)
+                {
+                    var profilePath = Path.Combine("Uploads", Profiles.FileName);
+                    using (var stream = new FileStream(profilePath, FileMode.Create))
+                    {
+                        await Profiles.CopyToAsync(stream);
+                    }
+                    operatorDetail.Profile = profilePath; // Save path in DB
+                }
+
+                // Process help image (if provided)
+                if (HelpImages != null)
+                {
+                    var helpImagePath = Path.Combine("Uploads", HelpImages.FileName);
+                    using (var stream = new FileStream(helpImagePath, FileMode.Create))
+                    {
+                        await HelpImages.CopyToAsync(stream);
+                    }
+                    operatorDetail.HelpImage = helpImagePath; // Save path in DB
+                }
+
+                var createdOperator = await _operatorRepository.UpdateOperator(operatorDetail);
+                return Ok(createdOperator);
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An internal server error occurred.");
+            }
+        }
 
         [HttpPost("CreateOperators")]
         public async Task<ActionResult<OperatorDetails>> CreateOperator(OperatorDetails operatorDetail)

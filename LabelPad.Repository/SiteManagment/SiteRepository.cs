@@ -980,6 +980,7 @@ namespace LabelPad.Repository.SiteManagment
             site.ParkingBaySeperator = objsite.Seperator;
             site.ParkingBaySectionsOrFloors = Convert.ToInt32(objsite.Section);
             site.VisitorSeperator = objsite.VSeperator;
+            site.OperatorId = objsite.OperatorId;
             site.VisitorSectionsOrFloors = Convert.ToInt32(objsite.VSection);
             _dbContext.Sites.Add(site);
             _dbContext.SaveChanges();
@@ -1782,6 +1783,7 @@ namespace LabelPad.Repository.SiteManagment
                 site.Zatparklogs24hrs = objsite.Zatparklogs24hrs;
                 site.UpdatedBy = objsite.LoginId;
                 site.MaxVehiclesPerBay = objsite.VehiclesPerBay;
+                site.OperatorId = objsite.OperatorId;
                 site.UpdatedOn = DateTime.Now;
                 if (objsite.ParkingBays.Count != 0)
                 {
