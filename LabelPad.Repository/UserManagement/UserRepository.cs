@@ -847,11 +847,12 @@ namespace LabelPad.Repository.UserManagement
         public async Task<dynamic> GetTenantUserById(int Id)
         {
             int siteId = 0;
-            var user1 = _dbContext.RegisterUsers.Where(x => x.Id == Id).FirstOrDefault();
+            var user1 = _dbContext.RegisterUsers.FirstOrDefault(x => x.Id == Id);
             if (user1 != null)
             {
                 siteId = user1.SiteId;
             }
+
             var user = (from r in _dbContext.RegisterUsers
                         where r.Id == Id
                         select new
@@ -884,7 +885,6 @@ namespace LabelPad.Repository.UserManagement
                             r.IdentityProofId,
                             r.UpdateEnddate,
                             BaysConfig = (from c in _dbContext.ParkingBayNos
-                                              //join z in _dbContext.VehicleRegistrations on c.RegisterUserId equals z.RegisterUserId
                                           where c.RegisterUserId == Id && c.IsActive == true && c.IsDeleted == false
                                           select new
                                           {
@@ -893,25 +893,121 @@ namespace LabelPad.Repository.UserManagement
                                               c.IsDeleted,
                                               MaxVehiclesPerBay = c.MaxVehiclesPerBay.ToString(),
                                               bayid = c.Id.ToString(),
-                                              status = 1,//_dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.ParkingBayNo == c.Id).FirstOrDefault().Id,
+                                              status = 1,
                                               c.RegisterUserId,
                                               c.StartDate,
                                               c.EndDate,
+
+                                              // Fetch only vehicles for the corresponding bay
                                               vehiclereg = (from z in _dbContext.VehicleRegistrations
                                                             where z.RegisterUserId == Id && z.IsActive == true && z.IsDeleted == false
+                                                            && z.ParkingBayNo == c.Id
                                                             select new
                                                             {
                                                                 z.VRM,
                                                             }).ToList(),
-                                              //z.VRM,
 
-
-                                              baynos = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && (x.RegisterUserId == Id || x.RegisterUserId == 0) && x.SiteId == siteId).ToList()
+                                              // Fetch only bay numbers related to this bayconfig
+                                              baynos = (from b in _dbContext.ParkingBayNos
+                                                        where b.IsActive == true && b.IsDeleted == false
+                                                        && b.Id == c.Id // Ensure only related bay is included
+                                                        select new
+                                                        {
+                                                            bayName = b.BayName,
+                                                            b.ParkingBayId,
+                                                            b.SiteId,
+                                                            b.Section,
+                                                            b.RegisterUserId,
+                                                            b.MaxVehiclesPerBay,
+                                                            status = false,
+                                                            b.StartDate,
+                                                            b.EndDate,
+                                                            bayConfigs = (object)null, // Placeholder if needed
+                                                            b.Id,
+                                                            b.IsActive,
+                                                            b.IsDeleted,
+                                                            b.CreatedOn,
+                                                            b.CreatedBy,
+                                                            b.UpdatedOn,
+                                                            b.UpdatedBy
+                                                        }).ToList()
                                           }).ToList()
                         }).FirstOrDefault();
-            // RegisterUser user = await _dbContext.RegisterUsers.FirstOrDefaultAsync(x => x.IsDeleted == false && x.Id == Id);
+
             return user;
+
         }
+
+
+
+        //public async Task<dynamic> GetTenantUserById(int Id)
+        //{
+        //    int siteId = 0;
+        //    var user1 = _dbContext.RegisterUsers.Where(x => x.Id == Id).FirstOrDefault();
+        //    if (user1 != null)
+        //    {
+        //        siteId = user1.SiteId;
+        //    }
+        //    var user = (from r in _dbContext.RegisterUsers
+        //                where r.Id == Id
+        //                select new
+        //                {
+        //                    r.FirstName,
+        //                    r.HouseOrFlatNo,
+        //                    r.ProfilePath,
+        //                    r.Address,
+        //                    r.Address2,
+        //                    r.City,
+        //                    r.ClientId,
+        //                    r.CountryId,
+        //                    r.CreatedBy,
+        //                    r.CreatedOn,
+        //                    r.Email,
+        //                    r.EmailCode,
+        //                    r.Id,
+        //                    r.IsActive,
+        //                    r.IsDeleted,
+        //                    r.IsVerified,
+        //                    r.LastName,
+        //                    r.MobileNumber,
+        //                    r.ParentId,
+        //                    r.ParkingBay,
+        //                    r.RoleId,
+        //                    r.SiteId,
+        //                    r.State,
+        //                    r.ZipCode,
+        //                    r.ResidencyProofId,
+        //                    r.IdentityProofId,
+        //                    r.UpdateEnddate,
+        //                    BaysConfig = (from c in _dbContext.ParkingBayNos
+        //                                      //join z in _dbContext.VehicleRegistrations on c.RegisterUserId equals z.RegisterUserId
+        //                                  where c.RegisterUserId == Id && c.IsActive == true && c.IsDeleted == false
+        //                                  select new
+        //                                  {
+        //                                      bayconfigid = c.Id,
+        //                                      c.IsActive,
+        //                                      c.IsDeleted,
+        //                                      MaxVehiclesPerBay = c.MaxVehiclesPerBay.ToString(),
+        //                                      bayid = c.Id.ToString(),
+        //                                      status = 1,//_dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.ParkingBayNo == c.Id).FirstOrDefault().Id,
+        //                                      c.RegisterUserId,
+        //                                      c.StartDate,
+        //                                      c.EndDate,
+        //                                      vehiclereg = (from z in _dbContext.VehicleRegistrations
+        //                                                    where z.RegisterUserId == Id && z.IsActive == true && z.IsDeleted == false
+        //                                                    select new
+        //                                                    {
+        //                                                        z.VRM,
+        //                                                    }).ToList(),
+        //                                      //z.VRM,
+
+
+        //                                      baynos = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && (x.RegisterUserId == Id || x.RegisterUserId == 0) && x.SiteId == siteId).ToList()
+        //                                  }).ToList()
+        //                }).FirstOrDefault();
+        //    // RegisterUser user = await _dbContext.RegisterUsers.FirstOrDefaultAsync(x => x.IsDeleted == false && x.Id == Id);
+        //    return user;
+        //}
         public async Task<RegisterUser> GetUserById(int Id)
         {
             RegisterUser user = await _dbContext.RegisterUsers.FirstOrDefaultAsync(x => x.IsDeleted == false && x.Id == Id);
