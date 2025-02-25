@@ -160,7 +160,8 @@ namespace LabelPad.Repository.SiteManagment
                                          registerUserId = Convert.ToString(rw["RegisterUserId"]),
                                          id = Convert.ToString(rw["Id"]),
                                         // bayName = Convert.ToString(rw["BayName"]) + " " + Convert.ToString(rw["FirstName"]) + " " + Convert.ToString(rw["LastName"]),
-                                         bayName = Convert.ToString(rw["BayName"])
+                                         bayName = Convert.ToString(rw["BayName"]),
+                                       
 
 
                                      }).OrderBy(x => x.bayName.LastIndexOfAny(nums))

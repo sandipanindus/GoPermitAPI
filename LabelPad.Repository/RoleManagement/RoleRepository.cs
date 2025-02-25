@@ -4,21 +4,27 @@ using LabelPad.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
 using System.Linq;
+using Microsoft.Extensions.Configuration;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace LabelPad.Repository.RoleManagement
 {
     public class RoleRepository : IRoleRepository
     {
         private readonly LabelPadDbContext _dbContext;
-        public RoleRepository(LabelPadDbContext dbContext)
+        private readonly IConfiguration _configuration;
+        public RoleRepository(LabelPadDbContext dbContext, IConfiguration configuration)
         {
             _dbContext = dbContext;
+            _configuration = configuration;
         }
         public async Task<dynamic> AddRole(AddRoleAc addRole)
         {
@@ -157,5 +163,7 @@ namespace LabelPad.Repository.RoleManagement
             return (role != null);
 
         }
+
+
     }
 }
