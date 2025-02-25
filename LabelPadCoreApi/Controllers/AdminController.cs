@@ -1958,6 +1958,39 @@ namespace LabelPadCoreApi.Controllers
         }
         #endregion
 
+        [HttpGet("Getopeartoruser")]
+        public async Task<IActionResult> Getopeartoruser(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("GetUsers Method was started,Controller:Admin");
+                var roles = await _userRepository.GetOpeartoruser(PageNo, PageSize, LoginId, RoleId, SiteId);
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = roles });
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the GetUsers Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+
+        [HttpGet("GetSiteUser")]
+        public async Task<IActionResult> GetSiteUser(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("GetUsers Method was started,Controller:Admin");
+                var roles = await _userRepository.GetSiteUser(PageNo, PageSize, LoginId, RoleId, SiteId);
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = roles });
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the GetUsers Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+
+
         #region GetRoles
         /// <summary>
         /// method to get the roles

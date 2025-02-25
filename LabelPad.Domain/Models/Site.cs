@@ -38,6 +38,8 @@ namespace LabelPad.Domain.Models
         [StringLength(50)]
         public string VisitorSeperator { get; set; }
         public int MaxVehiclesPerBay { get; set; }
+
+        public int OperatorId { get; set; }
         public string ZatparkSitecode { get; set; }
         public bool ManageParkingAvailble { get; set; }
         public bool visitorParkingAvailble { get; set; }

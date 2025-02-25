@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace LabelPadCoreApi.Controllers
@@ -19,13 +20,13 @@ namespace LabelPadCoreApi.Controllers
             _operatorRepository = operatorRepository;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<OperatorDetails>>> GetAllOperators()
+        [HttpGet("GetAllOperators")]
+        public async Task<ActionResult<IEnumerable<OperatorDetails>>> GetAllOperators(int LoginId,int RoleId)
         {
             try
             {
 
-            var OperatorDetails = await _operatorRepository.GetAllOperators();
+            var OperatorDetails = await _operatorRepository.GetAllOperators(LoginId, RoleId);
                 return Ok(OperatorDetails);
             }
             catch (Exception ex)
@@ -33,6 +34,7 @@ namespace LabelPadCoreApi.Controllers
                 throw ex;
             }
         }
+
 
         [HttpGet("GetOperatorById")]
         public async Task<ActionResult<OperatorDetails>> GetOperatorById(int id)
@@ -49,8 +51,61 @@ namespace LabelPadCoreApi.Controllers
                 throw ex;
             }
         }
+          [HttpPost("CreateOperator")]
+        public async Task<IActionResult> CreateOperator(
+     [FromForm] OperatorDetails operatorDetail, // Use [FromForm] instead of [FromBody]
+     IFormFile Profile, // File input for profile image
+     IFormFile HelpImage // File input for help image
+ )
+        {
+            try
+            {
+                if (operatorDetail == null)
+                {
+                    return BadRequest("Operator details cannot be null.");
+                }
 
-        [HttpPost("CreateOperator")]
+                // Validate required fields
+                if (string.IsNullOrEmpty(operatorDetail.FirstName) ||
+                    string.IsNullOrEmpty(operatorDetail.LastName) ||
+                    string.IsNullOrEmpty(operatorDetail.Email))
+                {
+                    return BadRequest("First Name, Last Name, and Email are required.");
+                }
+
+                // Process profile image (if provided)
+                if (Profile != null)
+                {
+                    var profilePath = Path.Combine("Uploads", Profile.FileName);
+                    using (var stream = new FileStream(profilePath, FileMode.Create))
+                    {
+                        await Profile.CopyToAsync(stream);
+                    }
+                    operatorDetail.Profile = profilePath; // Save path in DB
+                }
+
+                // Process help image (if provided)
+                if (HelpImage != null)
+                {
+                    var helpImagePath = Path.Combine("Uploads", HelpImage.FileName);
+                    using (var stream = new FileStream(helpImagePath, FileMode.Create))
+                    {
+                        await HelpImage.CopyToAsync(stream);
+                    }
+                    operatorDetail.HelpImage = helpImagePath; // Save path in DB
+                }
+
+                var createdOperator = await _operatorRepository.CreateOperator(operatorDetail);
+                return Ok(createdOperator);
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An internal server error occurred.");
+            }
+        }
+
+        [HttpPost("CreateOperators")]
         public async Task<ActionResult<OperatorDetails>> CreateOperator(OperatorDetails operatorDetail)
         {
             try

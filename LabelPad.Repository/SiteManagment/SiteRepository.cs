@@ -1616,6 +1616,47 @@ namespace LabelPad.Repository.SiteManagment
                 }
 
             }
+           else if (RoleId != 1)
+            {
+                if (PageSize == 0)
+                {
+                    List<Site> sites1 = _dbContext.Sites.Where(x => x.IsDeleted == false && x.OperatorId==LoginId).OrderByDescending(x => x.Id).ToList();
+                    //var sites1 = (from s in _dbContext.Sites
+                    //             where s.IsActive == true && s.IsDeleted == false
+                    //             select new
+                    //             {
+                    //                 s.Id,
+                    //                 SiteName = s.SiteName,
+                    //             }).OrderByDescending(x => x.Id).ToList();
+                    return sites1;
+                }
+                else
+                {
+                    int totalitems = _dbContext.Sites.Where(x => x.IsDeleted == false).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var sites = (from s in _dbContext.Sites
+                                 where s.IsActive == true && s.IsDeleted == false && s.OperatorId==LoginId
+                                 select new
+                                 {
+                                     PageNo = PageNo,
+                                     s.Id,
+                                     SiteName = s.SiteName,
+                                     s.Email,
+                                     s.MobileNumber,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage,
+                                 }).OrderByDescending(x => x.Id).ToList();
+
+
+
+                    sites = sites.Skip(count2).Take(count1).ToList();
+
+                    return sites;
+                }
+
+            }
+
             else
             {
 

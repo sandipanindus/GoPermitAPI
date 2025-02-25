@@ -22,5 +22,11 @@ namespace LabelPad.Domain.ApplicationClasses
         public bool Active { get; set; }
         public string Zipcode { get; set; }
         public int SiteId { get; set; }
+        public bool IsOperator { get; set; }
+        public bool IsSiteUser { get; set; }
+
+
+        public int OperatorId { get; set; }
+        public bool IsMicrosoftAccount { get; set; }
     }
 }

@@ -16,6 +16,9 @@ namespace LabelPad.Repository.UserManagement
         Task<dynamic> UpdateUser(AddUserAc addUserAc);
         Task<dynamic> GetTenantUsers(int PageNo,int PageSize,int LoginId,int RoleId,int SiteId);
         Task<dynamic> GetUsers(int PageNo, int PageSize,int LoginId,int RoleId,int SiteId);
+        Task<dynamic> GetOpeartoruser(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId);
+        Task<dynamic> GetSiteUser(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId);
+
         Task<dynamic> GetTenantUserById(int Id);
         Task<RegisterUser> GetUserById(int Id);
         bool GetExistsTenantUser(AddTenantUser addUserAc);
