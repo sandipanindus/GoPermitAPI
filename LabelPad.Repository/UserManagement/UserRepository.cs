@@ -1234,7 +1234,7 @@ namespace LabelPad.Repository.UserManagement
                 try
                 {
 
-                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2).Count();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2 && x.IsSiteUser == true).Count();
                     double totalpa = (double)totalitems / (double)PageSize;
                     double totalpage = Math.Round(totalpa);
                     var users = (from l in _dbContext.RegisterUsers
@@ -1273,7 +1273,7 @@ namespace LabelPad.Repository.UserManagement
                 {
                     var operatordet = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == LoginId).FirstOrDefault();
 
-                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId).Count();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.IsSiteUser == true).Count();
                     double totalpa = (double)totalitems / (double)PageSize;
                     double totalpage = Math.Round(totalpa);
                     var users = (from l in _dbContext.RegisterUsers
@@ -1300,7 +1300,7 @@ namespace LabelPad.Repository.UserManagement
                 }
                 else
                 {
-                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.SiteId == SiteId).Count();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.SiteId == SiteId && x.IsSiteUser == true).Count();
                     double totalpa = (double)totalitems / (double)PageSize;
                     double totalpage = Math.Round(totalpa);
                     var users = (from l in _dbContext.RegisterUsers
@@ -1339,7 +1339,7 @@ namespace LabelPad.Repository.UserManagement
                 try
                 {
 
-                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2).Count();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2 && x.IsOperator == true).Count();
                     double totalpa = (double)totalitems / (double)PageSize;
                     double totalpage = Math.Round(totalpa);
                     var users = (from l in _dbContext.RegisterUsers
@@ -1376,7 +1376,7 @@ namespace LabelPad.Repository.UserManagement
             {
                 if (SiteId == 0)
                 {
-                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId).Count();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.IsOperator == true).Count();
                     double totalpa = (double)totalitems / (double)PageSize;
                     double totalpage = Math.Round(totalpa);
                     var users = (from l in _dbContext.RegisterUsers
@@ -1403,7 +1403,7 @@ namespace LabelPad.Repository.UserManagement
                 }
                 else
                 {
-                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.SiteId == SiteId).Count();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.SiteId == SiteId && x.IsOperator == true).Count();
                     double totalpa = (double)totalitems / (double)PageSize;
                     double totalpage = Math.Round(totalpa);
                     var users = (from l in _dbContext.RegisterUsers
@@ -2297,6 +2297,7 @@ namespace LabelPad.Repository.UserManagement
                 user.UpdatedOn = DateTime.Now;
                 user.SiteId = addUserAc.SiteId;
                 user.IsActive = addUserAc.Active;
+                user.OperatorId = addUserAc.OperatorId;
                 user.IsMicrosoftAccount = addUserAc.IsMicrosoftAccount;
                 _dbContext.RegisterUsers.Update(user);
                 await _dbContext.SaveChangesAsync();

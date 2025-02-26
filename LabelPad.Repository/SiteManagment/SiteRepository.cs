@@ -1579,6 +1579,7 @@ namespace LabelPad.Repository.SiteManagment
             int count2 = count1 * PageNo - count1;
             if (RoleId == 1)
             {
+
                 if (PageSize == 0)
                 {
                     List<Site> sites1 = _dbContext.Sites.Where(x => x.IsDeleted == false).OrderByDescending(x => x.Id).ToList();
@@ -1619,9 +1620,13 @@ namespace LabelPad.Repository.SiteManagment
             }
            else if (RoleId != 1)
             {
+                var users = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == LoginId).OrderByDescending(x => x.Id).FirstOrDefault();
+
                 if (PageSize == 0)
                 {
-                    List<Site> sites1 = _dbContext.Sites.Where(x => x.IsDeleted == false && x.OperatorId==LoginId).OrderByDescending(x => x.Id).ToList();
+
+
+                    List<Site> sites1 = _dbContext.Sites.Where(x => x.IsDeleted == false && x.OperatorId== users.OperatorId).OrderByDescending(x => x.Id).ToList();
                     //var sites1 = (from s in _dbContext.Sites
                     //             where s.IsActive == true && s.IsDeleted == false
                     //             select new
@@ -1637,7 +1642,7 @@ namespace LabelPad.Repository.SiteManagment
                     double totalpa = (double)totalitems / (double)PageSize;
                     double totalpage = Math.Round(totalpa);
                     var sites = (from s in _dbContext.Sites
-                                 where s.IsActive == true && s.IsDeleted == false && s.OperatorId==LoginId
+                                 where s.IsActive == true && s.IsDeleted == false && s.OperatorId== users.OperatorId
                                  select new
                                  {
                                      PageNo = PageNo,
@@ -1722,6 +1727,34 @@ namespace LabelPad.Repository.SiteManagment
 
                 }
             }
+        }
+
+        public async Task<dynamic> GetSitesbyoperatorid(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId,int OperatorId)
+        {
+
+            int count1 = PageSize;
+            int count2 = count1 * PageNo - count1;
+           
+
+                if (OperatorId != 0)
+                {
+                    List<Site> sites1 = _dbContext.Sites.Where(x => x.IsDeleted == false && x.OperatorId== OperatorId).OrderByDescending(x => x.Id).ToList();
+                    //var sites1 = (from s in _dbContext.Sites
+                    //             where s.IsActive == true && s.IsDeleted == false
+                    //             select new
+                    //             {
+                    //                 s.Id,
+                    //                 SiteName = s.SiteName,
+                    //             }).OrderByDescending(x => x.Id).ToList();
+                    return sites1;
+                }
+            else
+            {
+                return null;
+            }
+               
+
+           
         }
 
         public async Task<dynamic> GetNotificatiosList(int tenantId)

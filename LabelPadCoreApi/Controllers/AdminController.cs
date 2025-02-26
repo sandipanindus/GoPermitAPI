@@ -29,6 +29,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.VisualBasic;
 using LabelPad.Repository.ReportManagement;
 using LabelPad.Repository.TenantManagement;
+using Microsoft.CodeAnalysis.Editing;
 
 namespace LabelPadCoreApi.Controllers
 {
@@ -899,6 +900,23 @@ namespace LabelPadCoreApi.Controllers
             }
         }
         #endregion
+
+        [HttpGet("GetSitesbyoperatorid")]
+        public async Task<IActionResult> GetSitesbyoperatorid(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId,int OperatorId)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                var sites = await _siteRepository.GetSitesbyoperatorid(PageNo, PageSize, LoginId, RoleId, SiteId, OperatorId);
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = sites });
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+
 
         #region GetZatparkLogs
         /// <summary>
