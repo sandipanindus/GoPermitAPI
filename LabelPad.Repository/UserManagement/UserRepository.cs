@@ -1856,7 +1856,7 @@ namespace LabelPad.Repository.UserManagement
                     else
                     {
                         //var parkingbayno = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid).FirstOrDefault();
-                        int bayno2 = Convert.ToInt32(addUserAc.BayConfigs[i].bayconfigid);
+                        int bayno2 = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
 
                         var parkingbayno = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == bayno2 && x.SiteId == siteid1).FirstOrDefault();
                         if (parkingbayno != null)
