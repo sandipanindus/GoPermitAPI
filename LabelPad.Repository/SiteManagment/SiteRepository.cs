@@ -1219,6 +1219,7 @@ namespace LabelPad.Repository.SiteManagment
                             s.Zipcode,
                             s.VisitorSectionsOrFloors,
                             s.VisitorSeperator,
+                            s.OperatorId,
                             bays = (from p in _dbContext.ParkingBays
                                     where p.SiteId == s.Id && p.IsActive == true && p.IsDeleted == false
                                     select new
