@@ -29,6 +29,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.VisualBasic;
 using LabelPad.Repository.ReportManagement;
 using LabelPad.Repository.TenantManagement;
+using LabelPad.Repository.IndustryManagement;
 
 namespace LabelPadCoreApi.Controllers
 {
@@ -50,10 +51,11 @@ namespace LabelPadCoreApi.Controllers
         private readonly IVisitorParkingRepository _visitorParkingRepository;
         private readonly IReportRepository _reportRepository;
         private readonly ITenantRepository _tenantRepository;
+        private readonly IIndustryRepository _industryRepository;
         public AdminController(ITenantRepository tenantRepository, IReportRepository reportRepository, IVisitorParkingRepository visitorParkingRepository, ISiteRepository siteRepository,
         IVehicleRegistrationRepository vehicleRegistrationRepository,
             IPermissionRepository permissionRepository, IRoleRepository roleRepository, IUserRepository userRepository,
-        IRegisterRepository registerRepository, LabelPadDbContext dbContext, IConfiguration configuration)
+        IRegisterRepository registerRepository, LabelPadDbContext dbContext, IConfiguration configuration, IIndustryRepository industryRepository)
         {
             _registerRepository = registerRepository;
             _dbContext = dbContext;
@@ -66,6 +68,7 @@ namespace LabelPadCoreApi.Controllers
             _reportRepository = reportRepository;
             _tenantRepository = tenantRepository;
             _permissionRepository = permissionRepository;
+            _industryRepository = industryRepository;
         }
 
         #region GetSupportList
@@ -3174,6 +3177,87 @@ namespace LabelPadCoreApi.Controllers
                 AppLogs.InfoLogs("BulkUploadTenants: Error occurred - " + errorMessage);
                 return StatusCode(500, new { Status = "-500", Message = "Internal server error", Error = errorMessage });
             }
+        }
+        [HttpGet("GetAllIndustries")]
+        public async Task<IActionResult> GetAllIndustries()
+        {
+            AppLogs.InfoLogs("GetAllIndustries API called at: {Time}");
+
+            var industries = await _industryRepository.GetAllIndustries();
+
+            AppLogs.InfoLogs("GetAllIndustries: Retrieved {Count} records");
+            return Ok(industries);
+        }
+
+        [HttpGet("GetIndustryById")]
+        public async Task<IActionResult> GetIndustryById(int id)
+        {
+            AppLogs.InfoLogs("GetIndustryById API called for ID: {Id}");
+
+            var industry = await _industryRepository.GetIndustryById(id);
+            if (industry == null)
+            {
+                AppLogs.InfoLogs("GetIndustryById: Industry with ID {Id} not found");
+                return null;
+            }
+
+            AppLogs.InfoLogs("GetIndustryById: Retrieved industry: {IndustryName}");
+            return Ok(industry);
+        }
+
+        [HttpPost("InsertIndustry")]
+        public async Task<IActionResult> InsertIndustry([FromBody] Industries industry)
+        {
+            AppLogs.InfoLogs("InsertIndustry API called with data: {@Industry}");
+
+            if (industry == null)
+            {
+                AppLogs.InfoLogs("InsertIndustry: Received invalid data");
+                return BadRequest(new { Message = "Invalid data" });
+            }
+
+            var insertedIndustry = await _industryRepository.InsertIndustry(industry);
+            AppLogs.InfoLogs("InsertIndustry: Successfully inserted industry with ID: {Id}");
+
+            return Ok(insertedIndustry);
+        }
+
+        [HttpPost("UpdateIndustry")]
+        public async Task<IActionResult> UpdateIndustry([FromBody] Industries industry)
+        {
+            AppLogs.InfoLogs("UpdateIndustry API called with data: {@Industry}");
+
+            if (industry == null || industry.Id <= 0)
+            {
+                AppLogs.InfoLogs("UpdateIndustry: Received invalid data");
+                return BadRequest(new { Message = "Invalid data" });
+            }
+
+            var updatedIndustry = await _industryRepository.UpdateIndustry(industry);
+            if (updatedIndustry == null)
+            {
+                AppLogs.InfoLogs("UpdateIndustry: Industry with ID {Id} not found");
+                return NotFound(new { Message = "Industry not found" });
+            }
+
+            AppLogs.InfoLogs("UpdateIndustry: Successfully updated industry with ID: {Id}");
+            return Ok(updatedIndustry);
+        }
+
+        [HttpPost("DeleteIndustry")]
+        public async Task<IActionResult> DeleteIndustry(int id)
+        {
+            AppLogs.InfoLogs("DeleteIndustry API called for ID: {Id} ");
+
+            var deletedIndustry = await _industryRepository.DeleteIndustry(id);
+            if (deletedIndustry == null)
+            {
+                AppLogs.InfoLogs("DeleteIndustry: Industry with ID: {Id} not found");
+                return NotFound(new { Message = "Industry not found" });
+            }
+
+            AppLogs.InfoLogs("DeleteIndustry: Successfully deleted industry with ID: {Id}");
+            return Ok(deletedIndustry);
         }
 
     }

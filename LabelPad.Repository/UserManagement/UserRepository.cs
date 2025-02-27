@@ -1493,18 +1493,7 @@ namespace LabelPad.Repository.UserManagement
                 }
                 _dbContext.RegisterUsers.Update(user);
                 _dbContext.SaveChanges();
-                //var parkingbaynos = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).ToList();
-                //if (parkingbaynos != null)
-                //{
-                //    parkingbaynos.ForEach(x =>
-                //    {
-                //        x.RegisterUserId = 0;
-                //        x.UpdatedBy = x.CreatedBy;
-                //        x.UpdatedOn = DateTime.Now;
-                //    });
-                //    _dbContext.ParkingBayNos.UpdateRange(parkingbaynos);
-                //    _dbContext.SaveChanges();
-                //}
+              
                 for (int i = 0; i < addUserAc.BayConfigs.Count; i++)
                 {
 
@@ -1593,24 +1582,7 @@ namespace LabelPad.Repository.UserManagement
                                 if (addUserAc.BayConfigs[i].vehiclereg != "")
                                 {
                                     var Issavecount = 1;
-                                    //var siteparkingbayno = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().ParkingBayNo;
-                                    //var vrmcompare = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id && x.ParkingBayNo == siteparkingbayno).FirstOrDefault();
-                                    //if (vrmcompare != null)
-                                    //{
-                                    //    if (addUserAc.BayConfigs[i].StartDate == vrmcompare.StartDate && addUserAc.BayConfigs[i].EndDate == vrmcompare.EndDate && addUserAc.BayConfigs[i].vehiclereg == vrmcompare.VRM)
-                                    //    {
-                                    //        iscancelwhitelist = false;
-                                    //    }
-                                    //    else
-                                    //    {
-                                    //        iscancelwhitelist = true;
-                                    //    }
-
-                                    //}
-                                    //else
-                                    //{
-                                    //    iscancelwhitelist = false;
-                                    //}
+                                   
                                     var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).FirstOrDefault();
                                     if (isParking != null)
                                     {
@@ -1674,45 +1646,7 @@ namespace LabelPad.Repository.UserManagement
                         }
                         else
                         {
-                            //changes
-                            //parkingbay = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid && x.RegisterUserId == user.Id && x.SiteId == siteid1).FirstOrDefault();
-                            //if (parkingbay!=null) 
-                            //{ 
-                            //if (vehicleregitration.EndDate.Value.Date > DateTime.Now && vehicleregitration.EndDate.Value.Date > parkingbay.EndDate)
-                            ////changes
-                            //    {
-                            //        if (parkingbay.RegisterUserId != 0)
-                            //    {
-                            //        string startdate = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                            //        string enddate = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                            //        parkingbay.RegisterUserId = user.Id;  
-                            //        parkingbay.IsActive = false;
-                            //        parkingbay.IsDeleted = true;
-                            //        parkingbay.UpdatedBy = 1;
-                            //        parkingbay.UpdatedOn = DateTime.Now;
-                            //        _dbContext.ParkingBayNos.Update(parkingbay);
-                            //        _dbContext.SaveChanges();
-                            //        ParkingBayNo bayno = new ParkingBayNo();
-                            //        bayno.IsActive = true;
-                            //        bayno.IsDeleted = false;
-                            //        bayno.ParkingBayId = parkingbay.ParkingBayId;
-                            //        bayno.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                            //        bayno.RegisterUserId = user.Id;
-                            //        bayno.Section = parkingbay.Section;
-                            //        bayno.BayName = parkingbay.BayName;
-                            //        bayno.StartDate = Convert.ToDateTime(startdate);
-                            //        bayno.EndDate = Convert.ToDateTime(enddate);
-                            //        bayno.CreatedBy = 1;
-                            //        bayno.CreatedOn = DateTime.Now;
-                            //        bayno.SiteId = parkingbay.SiteId;
-                            //        _dbContext.ParkingBayNos.Add(bayno);
-                            //        _dbContext.SaveChanges();
-                            //    }
-                            //}
-                            //// changes 
-                            //else
-                            // {
-
+                           
                             //changes start
                             var Issavecount = 1;
                             int id = addUserAc.Id;
@@ -1824,7 +1758,7 @@ namespace LabelPad.Repository.UserManagement
                                         for (int j = 0; j < values.Length; j++)
                                         {
                                             values[j] = values[j].Trim();
-                                            string testdate = values[i].Substring(0, 16);
+                                            string testdate = values[j].Substring(0, 16);
                                             DateTime testdate1 = Convert.ToDateTime(testdate);
 
 
@@ -1853,23 +1787,10 @@ namespace LabelPad.Repository.UserManagement
                                                         _dbContext.SaveChanges();
                                                     }
 
-                                                    //var vehicle = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == a.vehicleid).FirstOrDefault();
-                                                    //if (vehicle != null)
-                                                    //{
-                                                    //    vehicle.IsDeleted = true;
-                                                    //    vehicle.IsActive = false;
-                                                    //    vehicle.UpdatedOn = DateTime.Now;
-                                                    //    _dbContext.VehicleRegistrations.Update(vehicle);
-                                                    //    _dbContext.SaveChanges();
-                                                    //}
 
                                                 });
                                             }
                                         }
-
-
-                                        //if (objinput[0].Issavecount == 1)
-                                        //{
                                         DateTime todaydate = DateTime.Now;
                                         var vehilce = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == id && x.ParkingBayNo == bayno).ToList();
                                         if (vehilce != null)
@@ -1959,79 +1880,45 @@ namespace LabelPad.Repository.UserManagement
 
                             }
 
-                            //return new { Message = "Cannot be updated vehicle is registered" };
-                            // }
-                            //}
-
-
                         }
-                        //return new { Message = "User updated successfully" };
 
                     }
                     else
                     {
-                        var parkingbayno = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid && x.SiteId == siteid1).FirstOrDefault();
+                        //var parkingbayno = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid).FirstOrDefault();
+                        int bayno2 = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
+
+                        var parkingbayno = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == bayno2 && x.SiteId == siteid1).FirstOrDefault();
                         if (parkingbayno != null)
                         {
-                            //if (parkingbayno.RegisterUserId != 0)
-                            //{
-                            //    string startdate1 = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                            //    string enddate1 = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                            //    ParkingBayNo parkingobj = new ParkingBayNo();
-                            //    parkingobj.IsActive = true;
-                            //    parkingobj.IsDeleted = false;
-                            //    parkingobj.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                            //    parkingobj.ParkingBayId = parkingbayno.ParkingBayId;
-                            //    parkingobj.RegisterUserId = user.Id;
-                            //    parkingobj.Section = parkingbayno.Section;
-                            //    parkingobj.SiteId = parkingbayno.SiteId;
-                            //    parkingobj.StartDate = Convert.ToDateTime(startdate1);
-                            //    parkingobj.EndDate = Convert.ToDateTime(enddate1);
-                            //    parkingobj.BayName = parkingbayno.BayName; 
-                            //    parkingobj.CreatedBy = 1;
-                            //    parkingobj.CreatedOn = DateTime.Now;
-                            //    parkingobj.Status = true;
-                            //    _dbContext.ParkingBayNos.Add(parkingobj);
-                            //    _dbContext.SaveChanges();
-                            //}
+                           
 
                             string startdate = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
                             string enddate = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                            //parkingbay.RegisterUserId = addUserAc.Id;
-                            //parkingbay.IsActive = false;
-                            //parkingbay.IsDeleted = true;
-                            //parkingbay.UpdatedBy = 1;
-                            //parkingbay.UpdatedOn = DateTime.Now;
-                            //_dbContext.ParkingBayNos.Update(parkingbay);
+                            
+                            //var parkbay = _dbContext.ParkingBays.Where(x => x.IsActive == true && x.IsDeleted == false && x.SiteId == Convert.ToInt32(addUserAc.SiteId)).FirstOrDefault();
+                            //ParkingBayNo bayno = new ParkingBayNo();
+                            //bayno.IsActive = true;
+                            //bayno.IsDeleted = false;
+                            //bayno.ParkingBayId = parkbay.Id;
+                            //bayno.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
+                            //bayno.RegisterUserId = addUserAc.Id;
+                            //bayno.Section = Convert.ToString(parkbay.Section);
+                            //bayno.BayName = addUserAc.BayConfigs[i].bayid;
+                            //bayno.StartDate = Convert.ToDateTime(startdate);
+                            //bayno.EndDate = Convert.ToDateTime(enddate);
+                            //bayno.CreatedBy = 1;
+                            //bayno.CreatedOn = DateTime.Now;
+                            //bayno.SiteId = Convert.ToInt32(addUserAc.SiteId);
+                            //_dbContext.ParkingBayNos.Add(bayno);
                             //_dbContext.SaveChanges();
-                            var parkbay = _dbContext.ParkingBays.Where(x => x.IsActive == true && x.IsDeleted == false && x.SiteId == Convert.ToInt32(addUserAc.SiteId)).FirstOrDefault();
-                            ParkingBayNo bayno = new ParkingBayNo();
-                            bayno.IsActive = true;
-                            bayno.IsDeleted = false;
-                            bayno.ParkingBayId = parkbay.Id;
-                            bayno.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                            bayno.RegisterUserId = addUserAc.Id;
-                            bayno.Section = Convert.ToString(parkbay.Section);
-                            bayno.BayName = addUserAc.BayConfigs[i].bayid;
-                            bayno.StartDate = Convert.ToDateTime(startdate);
-                            bayno.EndDate = Convert.ToDateTime(enddate);
-                            bayno.CreatedBy = 1;
-                            bayno.CreatedOn = DateTime.Now;
-                            bayno.SiteId = Convert.ToInt32(addUserAc.SiteId);
-                            _dbContext.ParkingBayNos.Add(bayno);
+                            parkingbayno.StartDate = Convert.ToDateTime(addUserAc.BayConfigs[i].StartDate);
+                            parkingbayno.EndDate = Convert.ToDateTime(addUserAc.BayConfigs[i].EndDate);
+                            parkingbayno.RegisterUserId = addUserAc.Id;
+                            parkingbayno.UpdatedBy = 1;
+                            parkingbayno.UpdatedOn = DateTime.Now;
+                            _dbContext.ParkingBayNos.Update(parkingbayno);
                             _dbContext.SaveChanges();
-
-                            //var Reguser = _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.Email==user.Email && x.MobileNumber == user.MobileNumber).FirstOrDefault();
-                            //string startdate = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                            //string enddate = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                            //parkingbayno.RegisterUserId = addUserAc.Id;
-                            //parkingbayno.StartDate = Convert.ToDateTime(startdate);
-                            //parkingbayno.EndDate = Convert.ToDateTime(enddate);
-                            //parkingbayno.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                            //parkingbayno.UpdatedBy = 1;
-                            //parkingbayno.UpdatedOn = DateTime.Now;
-                            //_dbContext.ParkingBayNos.Update(parkingbayno);
-                            //_dbContext.SaveChanges();
                             if (addUserAc.BayConfigs[i].vehiclereg != "")
                             {
                                 var siteparkingbayno = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().ParkingBayNo;
@@ -2066,7 +1953,7 @@ namespace LabelPad.Repository.UserManagement
                                     vr.CreatedBy = 1;
                                     vr.StartDate = Convert.ToDateTime(startdate1);
                                     vr.EndDate = Convert.ToDateTime(enddate1);
-                                    vr.ParkingBayNo = isParking.Id;
+                                    vr.ParkingBayNo = parkingbayno.Id;
                                     _dbContext.VehicleRegistrations.Add(vr);
                                     _dbContext.SaveChanges();
                                 }
@@ -2075,7 +1962,7 @@ namespace LabelPad.Repository.UserManagement
                                 {
                                     var Id = vehicleregistered.Id;
                                     var id = vehicleregistered.RegisterUserId;
-                                    var bayno1 = parkingbayno1.Id;
+                                    var bayno1 = parkingbayno.Id;
                                     DateTime StartDate = addUserAc.BayConfigs[i].StartDate;
                                     DateTime EndDate = addUserAc.BayConfigs[i].EndDate;
                                     //bool issentzatpark = false;
@@ -2105,30 +1992,7 @@ namespace LabelPad.Repository.UserManagement
 
                         }
                     }
-                    //  int configid =(int)addUserAc.BayConfigs[i].bayconfigid;
-                    //BayConfig config = _dbContext.BayConfigs.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == configid).FirstOrDefault();
-                    //if (config != null)
-                    //{
-                    //    config.ParkingBayNoId =Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
-                    //    config.SiteId = Convert.ToInt32(addUserAc.SiteId);
-                    //    config.UpdatedBy = 1;
-                    //    config.UpdatedOn = DateTime.Now;
-                    //    _dbContext.BayConfigs.Update(config);
-                    //    _dbContext.SaveChanges();
-                    //}
-                    //else
-                    //{
-                    //    BayConfig bay = new BayConfig();
-                    //    bay.ParkingBayNoId = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
-                    //    bay.RegisterUserId = user.Id;
-                    //    bay.SiteId = Convert.ToInt32(addUserAc.SiteId);
-                    //    bay.IsActive = true;
-                    //    bay.IsDeleted = false;
-                    //    bay.CreatedBy = 1;
-                    //    bay.CreatedOn = DateTime.Now;
-                    //    _dbContext.BayConfigs.Add(bay);
-                    //    _dbContext.SaveChanges();
-                    //}
+                    
                 }
                 return new { Message = "User updated successfully" };
             }
