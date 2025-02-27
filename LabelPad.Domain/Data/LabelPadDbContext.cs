@@ -54,6 +54,7 @@ namespace LabelPad.Domain.Data
         public DbSet<Ping> Pings { get; set; }
         public DbSet<SoftwareVersion> SoftwareVersions { get; set; }
         public DbSet<OperatorDetails> OperatorDetail { get; set; }
+        public DbSet<Industry> Industries { get; set; }
 
     }
 }
