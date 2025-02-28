@@ -845,7 +845,7 @@ namespace LabelPad.Repository.UserManagement
 
         }
         public async Task<dynamic> GetTenantUserById(int Id)
-        {
+          {
             int siteId = 0;
             var user1 = _dbContext.RegisterUsers.FirstOrDefault(x => x.Id == Id);
             if (user1 != null)
@@ -885,7 +885,9 @@ namespace LabelPad.Repository.UserManagement
                             r.IdentityProofId,
                             r.UpdateEnddate,
                             BaysConfig = (from c in _dbContext.ParkingBayNos
-                                          where c.RegisterUserId == Id && c.IsActive == true && c.IsDeleted == false
+                                          where (c.RegisterUserId == Id || c.UpdatedBy == Id)
+
+                         && c.IsActive == true && c.IsDeleted == false
                                           select new
                                           {
                                               bayconfigid = c.Id,
