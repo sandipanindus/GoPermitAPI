@@ -1684,14 +1684,96 @@ namespace LabelPad.Repository.UserManagement
             }
         }
 
-        public async Task<dynamic> UpdateTenantUser(AddTenantUser addUserAc)
+        public async Task<dynamic> UpdateTenantUser_New(AddTenantUser addUserAc)
         {
-            bool iscancelwhitelist = false;
+            RegisterUser user = _dbContext.RegisterUsers
+                .Where(x => x.IsDeleted == false && x.Id == addUserAc.Id)
+                .FirstOrDefault();
 
-
-            RegisterUser user = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == addUserAc.Id).FirstOrDefault();
             if (user != null)
             {
+                bool bFlag = UpdateUserInTenant(addUserAc, user);
+                // Check if a record exists in the VehicleRegistration table for the given user
+                var existingVehicle = _dbContext.VehicleRegistrations
+                    .Where(v => v.RegisterUserId == user.Id)
+                    .ToList();
+
+
+                if (existingVehicle != null && existingVehicle.Count > 0)
+                {
+                    foreach (var item in existingVehicle)
+                    {
+                        item.IsDeleted = true;
+                        item.IsActive = false;
+                        item.UpdatedOn = DateTime.Now;
+                        item.UpdatedBy = user.Id;
+                        _dbContext.VehicleRegistrations.Update(item);
+                        await _dbContext.SaveChangesAsync();
+                    }
+
+                }
+                for (int i = 0; i < addUserAc.BayConfigs.Count; i++)
+                {
+                    var bayConfig = addUserAc.BayConfigs[i];
+
+                    
+                    int bayno = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
+                    var newVehicle = new VehicleRegistration();
+                    newVehicle.IsActive = true;
+                    newVehicle.IsDeleted = false;
+                    newVehicle.RegisterUserId = user.Id;
+                    newVehicle.VRM = addUserAc.BayConfigs[i].vehiclereg;
+                    newVehicle.CreatedOn = DateTime.Now;
+                    newVehicle.CreatedBy = addUserAc.ParentId;
+                    newVehicle.StartDate = Convert.ToDateTime(bayConfig.StartDate);
+                    newVehicle.EndDate = Convert.ToDateTime(bayConfig.EndDate);
+                    newVehicle.ParkingBayNo = bayno;
+
+                    _dbContext.VehicleRegistrations.Add(newVehicle);
+                    await _dbContext.SaveChangesAsync();
+                    var parkingBay = _dbContext.ParkingBayNos
+               .Where(pb => pb.Id == bayno && pb.IsDeleted == false && pb.IsActive == true)
+               .FirstOrDefault();
+
+                    if (parkingBay != null)
+                    {
+                        parkingBay.Status = true;
+                        parkingBay.StartDate = Convert.ToDateTime(addUserAc.BayConfigs[i].StartDate);
+                        parkingBay.EndDate = Convert.ToDateTime(addUserAc.BayConfigs[i].EndDate);
+                        parkingBay.IsActive = true;
+                        parkingBay.IsDeleted = false;
+                        parkingBay.UpdatedBy = user.Id;
+                        parkingBay.UpdatedOn = DateTime.Now;
+                        _dbContext.ParkingBayNos.Update(parkingBay);
+                        await _dbContext.SaveChangesAsync();
+                    }
+                    if (!string.IsNullOrEmpty(bayConfig.dates))
+                    {
+                        savemutliplevehciledates(newVehicle.Id, bayConfig.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
+                    }
+                    else
+                    {
+                        savemutliplevehciletime(newVehicle.Id, newVehicle.StartDate, newVehicle.EndDate, 0);
+                    }
+
+                    whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), newVehicle.VRM);
+
+
+                }
+
+                return new { Message = "Tenant user updated successfully" };
+            }
+
+            return new { Message = "No data found" };
+        }
+
+
+        private bool UpdateUserInTenant(AddTenantUser addUserAc, RegisterUser user)
+        {
+
+            try
+            {
+
                 user.FirstName = addUserAc.FirstName;
                 user.LastName = addUserAc.LastName;
                 user.HouseOrFlatNo = addUserAc.HouseOrFlatNo;
@@ -1700,8 +1782,8 @@ namespace LabelPad.Repository.UserManagement
                 user.State = addUserAc.State;
                 user.City = addUserAc.City;
                 user.Address = addUserAc.Address;
-                user.SiteId = Convert.ToInt32(addUserAc.SiteId);
-                user.ParkingBay = addUserAc.ParkingBay;
+                //user.SiteId = Convert.ToInt32(addUserAc.SiteId);
+                //user.ParkingBay = addUserAc.ParkingBay;
                 user.ZipCode = addUserAc.Zipcode;
                 user.UpdatedOn = DateTime.Now;
                 user.ClientId = addUserAc.ParentId;
@@ -1718,649 +1800,14 @@ namespace LabelPad.Repository.UserManagement
                 }
                 _dbContext.RegisterUsers.Update(user);
                 _dbContext.SaveChanges();
-                //var parkingbaynos = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).ToList();
-                //if (parkingbaynos != null)
-                //{
-                //    parkingbaynos.ForEach(x =>
-                //    {
-                //        x.RegisterUserId = 0;
-                //        x.UpdatedBy = x.CreatedBy;
-                //        x.UpdatedOn = DateTime.Now;
-                //    });
-                //    _dbContext.ParkingBayNos.UpdateRange(parkingbaynos);
-                //    _dbContext.SaveChanges();
-                //}
-                for (int i = 0; i < addUserAc.BayConfigs.Count; i++)
-                {
 
-                    string startdate1 = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                    string enddate1 = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                    int siteid1 = Convert.ToInt32(addUserAc.SiteId);
-                    var parkingbayno1 = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid && x.SiteId == siteid1).FirstOrDefault();
-                    //int bayid = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
-                    int bayconfigid = Convert.ToInt32(addUserAc.BayConfigs[i].bayconfigid);
-                    int number = 0;
-                    var parkingbay = new ParkingBayNo();
-
-
-                    if (addUserAc.BayConfigs[i].bayconfigid != 0)
-                    {
-                        bool isbay = int.TryParse(addUserAc.BayConfigs[i].bayid, out number);
-                        if (isbay)
-                        {
-                            int bayid = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
-                            parkingbay = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == bayid && x.RegisterUserId == user.Id && x.SiteId == siteid1).FirstOrDefault();
-                        }
-                        else
-                        {
-                            //changes start
-                            var vehicleregistration = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.ParkingBayNo == bayconfigid).FirstOrDefault();
-                            if (vehicleregistration == null)
-                            {
-                                //changes end
-                                parkingbay = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == bayconfigid && x.RegisterUserId == user.Id && x.SiteId == siteid1).FirstOrDefault();
-                                if (parkingbay != null)
-                                {
-                                    parkingbay.RegisterUserId = user.Id;
-                                    parkingbay.IsActive = false;
-                                    parkingbay.IsDeleted = true;
-                                    parkingbay.UpdatedBy = 1;
-                                    parkingbay.UpdatedOn = DateTime.Now;
-                                    _dbContext.ParkingBayNos.Update(parkingbay);
-                                    _dbContext.SaveChanges();
-                                }
-                                //changes start
-                                //parkingbay = null;
-                                //changes end
-
-                            }
-
-                        }
-                    }
-                    else
-                    {
-                        parkingbay = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid && x.RegisterUserId == user.Id && x.SiteId == siteid1).FirstOrDefault();
-                    }
-                    if (parkingbay != null)
-                    {
-                        // var vehicleregitration = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.ParkingBayNo == parkingbay.Id ).FirstOrDefault();
-                        //changes start
-                        var vehicleregitration = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.ParkingBayNo == bayconfigid).FirstOrDefault();
-                        //changes End
-                        if (vehicleregitration == null)
-                        {
-                            if (parkingbay.RegisterUserId != 0)
-                            {
-                                string startdate = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                                string enddate = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                                parkingbay.RegisterUserId = user.Id;
-                                parkingbay.IsActive = false;
-                                parkingbay.IsDeleted = true;
-                                parkingbay.UpdatedBy = 1;
-                                parkingbay.UpdatedOn = DateTime.Now;
-                                _dbContext.ParkingBayNos.Update(parkingbay);
-                                _dbContext.SaveChanges();
-                                ParkingBayNo bayno = new ParkingBayNo();
-                                bayno.IsActive = true;
-                                bayno.IsDeleted = false;
-                                bayno.ParkingBayId = parkingbay.ParkingBayId;
-                                bayno.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                                bayno.RegisterUserId = user.Id;
-                                bayno.Section = parkingbay.Section;
-                                bayno.BayName = parkingbay.BayName;
-                                bayno.StartDate = Convert.ToDateTime(startdate);
-                                bayno.EndDate = Convert.ToDateTime(enddate);
-                                bayno.CreatedBy = 1;
-                                bayno.CreatedOn = DateTime.Now;
-                                bayno.SiteId = parkingbay.SiteId;
-                                _dbContext.ParkingBayNos.Add(bayno);
-                                _dbContext.SaveChanges();
-                                if (addUserAc.BayConfigs[i].vehiclereg != "")
-                                {
-                                    var Issavecount = 1;
-                                    //var siteparkingbayno = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().ParkingBayNo;
-                                    //var vrmcompare = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id && x.ParkingBayNo == siteparkingbayno).FirstOrDefault();
-                                    //if (vrmcompare != null)
-                                    //{
-                                    //    if (addUserAc.BayConfigs[i].StartDate == vrmcompare.StartDate && addUserAc.BayConfigs[i].EndDate == vrmcompare.EndDate && addUserAc.BayConfigs[i].vehiclereg == vrmcompare.VRM)
-                                    //    {
-                                    //        iscancelwhitelist = false;
-                                    //    }
-                                    //    else
-                                    //    {
-                                    //        iscancelwhitelist = true;
-                                    //    }
-
-                                    //}
-                                    //else
-                                    //{
-                                    //    iscancelwhitelist = false;
-                                    //}
-                                    var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).FirstOrDefault();
-                                    if (isParking != null)
-                                    {
-
-                                        VehicleRegistration vr = new VehicleRegistration();
-                                        vr.IsActive = true;
-                                        vr.IsDeleted = false;
-                                        vr.RegisterUserId = isParking.RegisterUserId;
-                                        vr.VRM = addUserAc.BayConfigs[i].vehiclereg;
-                                        vr.CreatedOn = DateTime.Now;
-                                        vr.CreatedBy = 1;
-                                        vr.StartDate = Convert.ToDateTime(startdate1);
-                                        vr.EndDate = Convert.ToDateTime(enddate1);
-                                        vr.ParkingBayNo = isParking.Id;
-                                        _dbContext.VehicleRegistrations.Add(vr);
-                                        _dbContext.SaveChanges();
-                                    }
-                                    var vehicleregistered = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
-                                    if (vehicleregistered != null)
-                                    {
-                                        var Id = vehicleregistered.Id;
-                                        var id = vehicleregistered.RegisterUserId;
-                                        var bayno1 = isParking.Id;
-                                        // var siteparkingbayno = vehicleregistered.ParkingBayNo;
-                                        DateTime StartDate = addUserAc.BayConfigs[i].StartDate;
-                                        DateTime EndDate = addUserAc.BayConfigs[i].EndDate;
-                                        //bool issentzatpark = false;
-                                        if (addUserAc.BayConfigs[i].dates != "")
-                                        {
-                                            //savemutliplevehciledates(addUserAc.Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, Issavecount, id, Convert.ToInt32(bayno));
-                                            savemutliplevehciledates(Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, 0, id, bayno1);
-
-                                        }
-                                        else
-                                        {
-                                            savemutliplevehciletime(Id, StartDate, EndDate, 0);
-                                        }
-
-                                        //if (iscancelwhitelist==true)
-                                        //{
-                                        //    Cancelwhitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-                                        //    whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-
-                                        //}
-                                        //else
-                                        //{
-                                        whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-                                        //}
-
-
-                                    }
-
-                                }
-
-
-                            }
-                            else
-                            {
-
-                            }
-                        }
-                        else
-                        {
-                            //changes
-                            //parkingbay = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid && x.RegisterUserId == user.Id && x.SiteId == siteid1).FirstOrDefault();
-                            //if (parkingbay!=null) 
-                            //{ 
-                            //if (vehicleregitration.EndDate.Value.Date > DateTime.Now && vehicleregitration.EndDate.Value.Date > parkingbay.EndDate)
-                            ////changes
-                            //    {
-                            //        if (parkingbay.RegisterUserId != 0)
-                            //    {
-                            //        string startdate = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                            //        string enddate = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                            //        parkingbay.RegisterUserId = user.Id;  
-                            //        parkingbay.IsActive = false;
-                            //        parkingbay.IsDeleted = true;
-                            //        parkingbay.UpdatedBy = 1;
-                            //        parkingbay.UpdatedOn = DateTime.Now;
-                            //        _dbContext.ParkingBayNos.Update(parkingbay);
-                            //        _dbContext.SaveChanges();
-                            //        ParkingBayNo bayno = new ParkingBayNo();
-                            //        bayno.IsActive = true;
-                            //        bayno.IsDeleted = false;
-                            //        bayno.ParkingBayId = parkingbay.ParkingBayId;
-                            //        bayno.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                            //        bayno.RegisterUserId = user.Id;
-                            //        bayno.Section = parkingbay.Section;
-                            //        bayno.BayName = parkingbay.BayName;
-                            //        bayno.StartDate = Convert.ToDateTime(startdate);
-                            //        bayno.EndDate = Convert.ToDateTime(enddate);
-                            //        bayno.CreatedBy = 1;
-                            //        bayno.CreatedOn = DateTime.Now;
-                            //        bayno.SiteId = parkingbay.SiteId;
-                            //        _dbContext.ParkingBayNos.Add(bayno);
-                            //        _dbContext.SaveChanges();
-                            //    }
-                            //}
-                            //// changes 
-                            //else
-                            // {
-
-                            //changes start
-                            var Issavecount = 1;
-                            int id = addUserAc.Id;
-                            bool updatevehicle = false;
-                            int bayno = Convert.ToInt32(addUserAc.BayConfigs[i].bayconfigid);
-                            var vehicleregistration = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == id && x.ParkingBayNo == bayno && x.IsDeleted == false && x.IsActive == true).OrderByDescending(x => x.Id).FirstOrDefault();
-                            if (vehicleregistration != null)
-                            {
-                                if (vehicleregistration.RegisterUserId == id)
-                                {
-                                    updatevehicle = true;
-                                }
-                                else
-                                {
-
-                                    if (vehicleregistration.RegisterUserId == 0)
-                                    {
-                                        updatevehicle = true;
-                                    }
-                                    else
-                                    {
-                                        updatevehicle = false;
-
-                                        return new { Message = "Can not be updated as the the bayname is already booked for respective dates" };
-                                    }
-
-                                }
-                                if (updatevehicle == true)
-                                {
-                                    //var issentzatpark = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().ParkingBayNo;
-                                    var siteparkingbayno = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().ParkingBayNo;
-                                    var vrmcompare = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == id && x.ParkingBayNo == siteparkingbayno).FirstOrDefault();
-                                    var oldvrm = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == id && x.ParkingBayNo == siteparkingbayno).FirstOrDefault().VRM;
-
-                                    if (vrmcompare != null)
-                                    {
-                                        if (addUserAc.BayConfigs[i].StartDate == vrmcompare.StartDate && addUserAc.BayConfigs[i].EndDate == vrmcompare.EndDate && addUserAc.BayConfigs[i].vehiclereg == vrmcompare.VRM)
-                                        {
-                                            iscancelwhitelist = false;
-                                        }
-                                        else
-                                        {
-                                            iscancelwhitelist = true;
-                                        }
-
-                                    }
-                                    else
-                                    {
-                                        iscancelwhitelist = false;
-                                    }
-                                    int parkingbayno = vehicleregistration.ParkingBayNo;
-                                    var parkingbaynos = _dbContext.ParkingBayNos.Where(x => x.Id == parkingbayno).FirstOrDefault();
-                                    if (parkingbaynos != null)
-                                    {
-                                        int maxvehicle = parkingbaynos.MaxVehiclesPerBay;
-                                        if (maxvehicle == 1)
-                                        {
-                                            if (iscancelwhitelist == true)
-                                            {
-                                                Cancelwhitelistvehicle(Convert.ToInt32(addUserAc.SiteId), oldvrm);
-                                            }
-                                            int vehicleregistrationid = vehicleregistration.Id;
-                                            var timeslots = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.VehicleRegistrationId == vehicleregistrationid).ToList();
-                                            if (timeslots != null)
-                                            {
-                                                timeslots.ForEach(x =>
-                                                {
-                                                    x.IsActive = false;
-                                                    x.IsDeleted = true;
-                                                    x.UpdatedBy = x.CreatedBy;
-                                                    x.UpdatedOn = DateTime.Now;
-                                                });
-                                                _dbContext.VehicleRegistrationTimeSlots.UpdateRange(timeslots);
-                                                _dbContext.SaveChanges();
-                                                //changes started
-                                                if (vehicleregistration == null)
-                                                {
-                                                    //changes Ends
-                                                    vehicleregistration.IsActive = false;
-                                                    vehicleregistration.IsDeleted = true;
-                                                    vehicleregistration.UpdatedBy = 1;
-                                                    vehicleregistration.UpdatedOn = DateTime.Now;
-                                                    _dbContext.VehicleRegistrations.Update(vehicleregistration);
-                                                    _dbContext.SaveChanges();
-
-                                                }
-
-
-                                            }
-                                        }
-                                    }
-                                    var parkingbay1 = _dbContext.ParkingBayNos.Where(x => x.RegisterUserId == id && x.Id == bayno && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
-                                    if (parkingbay != null)
-                                    {
-                                        //parkingbay1.StartDate = Convert.ToDateTime(addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd"));
-                                        //parkingbay1.EndDate = Convert.ToDateTime(addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd"));
-                                        parkingbay1.StartDate = Convert.ToDateTime(addUserAc.BayConfigs[i].StartDate);
-                                        parkingbay1.EndDate = Convert.ToDateTime(addUserAc.BayConfigs[i].EndDate);
-                                        parkingbay1.UpdatedBy = 1;
-                                        parkingbay1.UpdatedOn = DateTime.Now;
-                                        _dbContext.ParkingBayNos.Update(parkingbay1);
-                                        _dbContext.SaveChanges();
-
-                                    }
-                                    if (addUserAc.BayConfigs[i].dates != "")
-                                    {
-                                        string[] values = addUserAc.BayConfigs[i].dates.Split(',');
-                                        //DateTime modifieddate = Convert.ToDateTime(date1.Year + "-" + date1.Month + "-" + date1.Day + " " + date2.Hour + ":" + date2.Minute);
-                                        for (int j = 0; j < values.Length; j++)
-                                        {
-                                            values[j] = values[j].Trim();
-                                            string testdate = values[i].Substring(0, 16);
-                                            DateTime testdate1 = Convert.ToDateTime(testdate);
-
-
-                                            var responce = (from b in _dbContext.VehicleRegistrations
-                                                            join pb in _dbContext.VehicleRegistrationTimeSlots on b.Id equals pb.VehicleRegistrationId
-                                                            where b.RegisterUserId == id && b.ParkingBayNo == Convert.ToInt32(bayno)
-                                                            && pb.FromDate.Date == (Convert.ToDateTime(testdate1).Date)
-
-                                                            select new
-                                                            {
-                                                                id = pb.Id,
-
-                                                            }).ToList();
-                                            if (responce != null)
-                                            {
-                                                responce.ForEach(a =>
-                                                {
-                                                    var visitorbayno = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == a.id).FirstOrDefault();
-                                                    if (visitorbayno != null)
-                                                    {
-                                                        visitorbayno.IsDeleted = true;
-                                                        visitorbayno.IsActive = false;
-                                                        visitorbayno.UpdatedOn = DateTime.Now;
-                                                        visitorbayno.UpdatedOn = DateTime.Now;
-                                                        _dbContext.VehicleRegistrationTimeSlots.Update(visitorbayno);
-                                                        _dbContext.SaveChanges();
-                                                    }
-
-                                                    //var vehicle = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == a.vehicleid).FirstOrDefault();
-                                                    //if (vehicle != null)
-                                                    //{
-                                                    //    vehicle.IsDeleted = true;
-                                                    //    vehicle.IsActive = false;
-                                                    //    vehicle.UpdatedOn = DateTime.Now;
-                                                    //    _dbContext.VehicleRegistrations.Update(vehicle);
-                                                    //    _dbContext.SaveChanges();
-                                                    //}
-
-                                                });
-                                            }
-                                        }
-
-
-                                        //if (objinput[0].Issavecount == 1)
-                                        //{
-                                        DateTime todaydate = DateTime.Now;
-                                        var vehilce = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == id && x.ParkingBayNo == bayno).ToList();
-                                        if (vehilce != null)
-                                        {
-
-                                            vehilce.ForEach(a =>
-                                            {
-                                                var timeslots = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.IsActive == true && x.IsDeleted == false && x.VehicleRegistrationId == a.Id && x.FromDate.Date > (todaydate.Date)).ToList();
-                                                if (timeslots != null)
-                                                {
-                                                    timeslots.ForEach(x =>
-                                                    {
-                                                        x.IsActive = false;
-                                                        x.IsDeleted = true;
-                                                        x.UpdatedBy = x.CreatedBy;
-                                                        x.UpdatedOn = DateTime.Now;
-                                                    });
-                                                    _dbContext.VehicleRegistrationTimeSlots.UpdateRange(timeslots);
-                                                    _dbContext.SaveChanges();
-                                                }
-
-
-                                                a.UpdatedOn = DateTime.Now;
-                                                a.EndDate = DateTime.Now;
-                                                _dbContext.VehicleRegistrations.Update(a);
-                                                _dbContext.SaveChanges();
-                                            });
-                                        }
-
-
-                                        DateTime StartDate = addUserAc.BayConfigs[i].StartDate;
-                                        DateTime EndDate = addUserAc.BayConfigs[i].EndDate;
-                                        var vehicleregistered = _dbContext.VehicleRegistrations.Where(x => x.ParkingBayNo == bayconfigid && x.RegisterUserId == id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
-                                        if (vehicleregistered != null)
-                                        {
-                                            vehicleregistered.UpdatedOn = DateTime.Now;
-                                            vehicleregistered.UpdatedBy = 1;
-                                            vehicleregistered.StartDate = StartDate;
-                                            vehicleregistered.EndDate = EndDate;
-                                            vehicleregistered.VRM = addUserAc.BayConfigs[i].vehiclereg;
-                                            vehicleregistered.IsActive = true;
-                                            vehicleregistered.IsDeleted = false;
-                                            vehicleregistered.RegisterUserId = parkingbay1.RegisterUserId;
-                                            vehicleregistered.ParkingBayNo = parkingbay1.Id;
-                                            vehicleregistered.IsSaveCount = Issavecount;
-                                            _dbContext.VehicleRegistrations.Update(vehicleregistered);
-                                            _dbContext.SaveChanges();
-                                        }
-                                        var vehicleregisteredup = _dbContext.VehicleRegistrations.Where(x => x.ParkingBayNo == bayconfigid && x.RegisterUserId == id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
-
-                                        var Id = vehicleregisteredup.Id;
-                                        if (addUserAc.BayConfigs[i].dates != "")
-                                        {
-                                            //savemutliplevehciledates(addUserAc.Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, Issavecount, id, Convert.ToInt32(bayno));
-                                            savemutliplevehciledates(Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, Issavecount, id, Convert.ToInt32(bayno));
-
-                                        }
-                                        else
-                                        {
-                                            savemutliplevehciletime(Id, StartDate, EndDate, Issavecount);
-                                        }
-
-                                        if (iscancelwhitelist == true)
-                                        {
-                                            //Cancelwhitelistvehicle(Convert.ToInt32(addUserAc.SiteId), oldvrm);
-                                            whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-
-                                        }
-                                        //else
-                                        //{
-                                        //    whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-                                        //}
-                                        //}
-
-                                    }
-                                    //else
-                                    //{
-
-                                    //}
-                                }
-                                else
-                                {
-                                    return new { Message = "Can not be updated as the the bayname is already booked for respective dates" };
-
-                                }
-                                //changes end
-
-                            }
-
-                            //return new { Message = "Cannot be updated vehicle is registered" };
-                            // }
-                            //}
-
-
-                        }
-                        //return new { Message = "User updated successfully" };
-
-                    }
-                    else
-                    {
-                        var parkingbayno = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid && x.SiteId == siteid1).FirstOrDefault();
-                        if (parkingbayno != null)
-                        {
-                            //if (parkingbayno.RegisterUserId != 0)
-                            //{
-                            //    string startdate1 = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                            //    string enddate1 = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                            //    ParkingBayNo parkingobj = new ParkingBayNo();
-                            //    parkingobj.IsActive = true;
-                            //    parkingobj.IsDeleted = false;
-                            //    parkingobj.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                            //    parkingobj.ParkingBayId = parkingbayno.ParkingBayId;
-                            //    parkingobj.RegisterUserId = user.Id;
-                            //    parkingobj.Section = parkingbayno.Section;
-                            //    parkingobj.SiteId = parkingbayno.SiteId;
-                            //    parkingobj.StartDate = Convert.ToDateTime(startdate1);
-                            //    parkingobj.EndDate = Convert.ToDateTime(enddate1);
-                            //    parkingobj.BayName = parkingbayno.BayName; 
-                            //    parkingobj.CreatedBy = 1;
-                            //    parkingobj.CreatedOn = DateTime.Now;
-                            //    parkingobj.Status = true;
-                            //    _dbContext.ParkingBayNos.Add(parkingobj);
-                            //    _dbContext.SaveChanges();
-                            //}
-
-                            string startdate = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                            string enddate = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                            //parkingbay.RegisterUserId = addUserAc.Id;
-                            //parkingbay.IsActive = false;
-                            //parkingbay.IsDeleted = true;
-                            //parkingbay.UpdatedBy = 1;
-                            //parkingbay.UpdatedOn = DateTime.Now;
-                            //_dbContext.ParkingBayNos.Update(parkingbay);
-                            //_dbContext.SaveChanges();
-                            var parkbay = _dbContext.ParkingBays.Where(x => x.IsActive == true && x.IsDeleted == false && x.SiteId == Convert.ToInt32(addUserAc.SiteId)).FirstOrDefault();
-                            ParkingBayNo bayno = new ParkingBayNo();
-                            bayno.IsActive = true;
-                            bayno.IsDeleted = false;
-                            bayno.ParkingBayId = parkbay.Id;
-                            bayno.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                            bayno.RegisterUserId = addUserAc.Id;
-                            bayno.Section = Convert.ToString(parkbay.Section);
-                            bayno.BayName = addUserAc.BayConfigs[i].bayid;
-                            bayno.StartDate = Convert.ToDateTime(startdate);
-                            bayno.EndDate = Convert.ToDateTime(enddate);
-                            bayno.CreatedBy = 1;
-                            bayno.CreatedOn = DateTime.Now;
-                            bayno.SiteId = Convert.ToInt32(addUserAc.SiteId);
-                            _dbContext.ParkingBayNos.Add(bayno);
-                            _dbContext.SaveChanges();
-
-                            //var Reguser = _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.Email==user.Email && x.MobileNumber == user.MobileNumber).FirstOrDefault();
-                            //string startdate = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                            //string enddate = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                            //parkingbayno.RegisterUserId = addUserAc.Id;
-                            //parkingbayno.StartDate = Convert.ToDateTime(startdate);
-                            //parkingbayno.EndDate = Convert.ToDateTime(enddate);
-                            //parkingbayno.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                            //parkingbayno.UpdatedBy = 1;
-                            //parkingbayno.UpdatedOn = DateTime.Now;
-                            //_dbContext.ParkingBayNos.Update(parkingbayno);
-                            //_dbContext.SaveChanges();
-                            if (addUserAc.BayConfigs[i].vehiclereg != "")
-                            {
-                                var siteparkingbayno = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().ParkingBayNo;
-                                var vrmcompare = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == addUserAc.Id && x.ParkingBayNo == siteparkingbayno).FirstOrDefault();
-                                if (vrmcompare != null)
-                                {
-                                    if (addUserAc.BayConfigs[i].StartDate == vrmcompare.StartDate && addUserAc.BayConfigs[i].EndDate == vrmcompare.EndDate && addUserAc.BayConfigs[i].vehiclereg == vrmcompare.VRM)
-                                    {
-                                        iscancelwhitelist = false;
-                                    }
-                                    else
-                                    {
-                                        iscancelwhitelist = true;
-                                    }
-
-                                }
-                                else
-                                {
-                                    iscancelwhitelist = false;
-                                }
-                                var Issavecount = 1;
-                                var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).FirstOrDefault();
-                                if (isParking != null)
-                                {
-
-                                    VehicleRegistration vr = new VehicleRegistration();
-                                    vr.IsActive = true;
-                                    vr.IsDeleted = false;
-                                    vr.RegisterUserId = isParking.RegisterUserId;
-                                    vr.VRM = addUserAc.BayConfigs[i].vehiclereg;
-                                    vr.CreatedOn = DateTime.Now;
-                                    vr.CreatedBy = 1;
-                                    vr.StartDate = Convert.ToDateTime(startdate1);
-                                    vr.EndDate = Convert.ToDateTime(enddate1);
-                                    vr.ParkingBayNo = isParking.Id;
-                                    _dbContext.VehicleRegistrations.Add(vr);
-                                    _dbContext.SaveChanges();
-                                }
-                                var vehicleregistered = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
-                                if (vehicleregistered != null)
-                                {
-                                    var Id = vehicleregistered.Id;
-                                    var id = vehicleregistered.RegisterUserId;
-                                    var bayno1 = parkingbayno1.Id;
-                                    DateTime StartDate = addUserAc.BayConfigs[i].StartDate;
-                                    DateTime EndDate = addUserAc.BayConfigs[i].EndDate;
-                                    //bool issentzatpark = false;
-                                    if (addUserAc.BayConfigs[i].dates != "")
-                                    {
-                                        //savemutliplevehciledates(addUserAc.Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, Issavecount, id, Convert.ToInt32(bayno));
-                                        savemutliplevehciledates(Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, 0, id, bayno1);
-
-                                    }
-                                    else
-                                    {
-                                        savemutliplevehciletime(Id, StartDate, EndDate, 0);
-                                    }
-                                    if (iscancelwhitelist == true)
-                                    {
-                                        Cancelwhitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-                                        whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-
-                                    }
-                                    else
-                                    {
-                                        whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-                                    }
-                                }
-
-                            }
-
-                        }
-                    }
-                    //  int configid =(int)addUserAc.BayConfigs[i].bayconfigid;
-                    //BayConfig config = _dbContext.BayConfigs.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == configid).FirstOrDefault();
-                    //if (config != null)
-                    //{
-                    //    config.ParkingBayNoId =Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
-                    //    config.SiteId = Convert.ToInt32(addUserAc.SiteId);
-                    //    config.UpdatedBy = 1;
-                    //    config.UpdatedOn = DateTime.Now;
-                    //    _dbContext.BayConfigs.Update(config);
-                    //    _dbContext.SaveChanges();
-                    //}
-                    //else
-                    //{
-                    //    BayConfig bay = new BayConfig();
-                    //    bay.ParkingBayNoId = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
-                    //    bay.RegisterUserId = user.Id;
-                    //    bay.SiteId = Convert.ToInt32(addUserAc.SiteId);
-                    //    bay.IsActive = true;
-                    //    bay.IsDeleted = false;
-                    //    bay.CreatedBy = 1;
-                    //    bay.CreatedOn = DateTime.Now;
-                    //    _dbContext.BayConfigs.Add(bay);
-                    //    _dbContext.SaveChanges();
-                    //}
-                }
-                return new { Message = "User updated successfully" };
+                return true;
             }
-            else
+            catch (Exception ex)
             {
-                return new { Message = "No data Found" };
+                throw ex;
             }
+
         }
 
         private async Task<bool> savemutliplevehciletime(int id, DateTime? startdate, DateTime? enddate, int issavecount)

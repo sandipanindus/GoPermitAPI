@@ -13,7 +13,7 @@ namespace LabelPad.Repository.UserManagement
     {
         Task<dynamic> AddTenantUser(AddTenantUser addUser);
         Task<dynamic> AddUser(AddUserAc addUser);
-        Task<dynamic> UpdateTenantUser(AddTenantUser addUserAc);
+        Task<dynamic> UpdateTenantUser_New(AddTenantUser addUserAc);
         Task<dynamic> UpdateUser(AddUserAc addUserAc);
         Task<dynamic> GetTenantUsers(int PageNo,int PageSize,int LoginId,int RoleId,int SiteId);
         Task<dynamic> GetUsers(int PageNo, int PageSize,int LoginId,int RoleId,int SiteId);
