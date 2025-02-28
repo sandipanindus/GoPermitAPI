@@ -1470,6 +1470,7 @@ namespace LabelPad.Repository.UserManagement
                     var newVehicle = new VehicleRegistration();
                     newVehicle.IsActive = true;
                     newVehicle.IsDeleted = false;
+                    newVehicle.IsSaveCount = 1;
                     newVehicle.RegisterUserId = user.Id;
                     newVehicle.VRM = addUserAc.BayConfigs[i].vehiclereg;
                     newVehicle.CreatedOn = DateTime.Now;

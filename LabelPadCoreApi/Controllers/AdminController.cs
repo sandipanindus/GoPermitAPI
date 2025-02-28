@@ -31,6 +31,7 @@ using LabelPad.Repository.ReportManagement;
 using LabelPad.Repository.TenantManagement;
 using LabelPad.Repository.IndustryManagement;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using Azure.Core;
 
 namespace LabelPadCoreApi.Controllers
 {
@@ -1681,7 +1682,11 @@ namespace LabelPadCoreApi.Controllers
             }
         }
         #endregion
-
+        public class ApproveTenantRequest
+        {
+            public int Id { get; set; }
+            public bool IsApproved { get; set; }
+        }
         #region ApproveTenant
         /// <summary>
         /// method to update the tenant status
@@ -1689,16 +1694,16 @@ namespace LabelPadCoreApi.Controllers
         /// <param name="Id"></param>
         /// <returns></returns>
         [HttpPost("ApproveTenant")]
-        public async Task<IActionResult> ApproveTenant(int Id)
+        public async Task<IActionResult> ApproveTenant(ApproveTenantRequest request)
         {
             try
             {
                 var user = _dbContext.RegisterUsers
-                                    .Where(x => !x.IsDeleted && x.Id == Id)
+                                    .Where(x => !x.IsDeleted && x.Id == request.Id)
                                     .FirstOrDefault();
-                user.IsApproved = true;
+                user.IsApproved = request.IsApproved;
                 user.IsActive = true;
-
+                user.UpdatedOn = DateTime.Now;
                 _dbContext.RegisterUsers.Update(user);
                 await _dbContext.SaveChangesAsync();
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = "User status updated successfully" });
