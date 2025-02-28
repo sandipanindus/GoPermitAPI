@@ -1044,6 +1044,7 @@ namespace LabelPad.Repository.UserManagement
                                       l.FirstName,
                                      
                                       l.LastName,
+                                      l.IsApproved,
                                       l.Email,
                                       l.MobileNumber,
                                       l.RoleId,
@@ -1074,6 +1075,7 @@ namespace LabelPad.Repository.UserManagement
                                      l.FirstName,
                                     
                                      l.LastName,
+                                     l.IsApproved,
                                      l.Email,
                                      l.MobileNumber,
                                      l.RoleId,
@@ -1108,6 +1110,7 @@ namespace LabelPad.Repository.UserManagement
                                  l.FirstName,
                                 
                                  l.LastName,
+                                 l.IsApproved,
                                  l.Email,
                                  l.MobileNumber,
                                  l.RoleId,
