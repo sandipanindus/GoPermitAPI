@@ -31,7 +31,8 @@ namespace LabelPad.Repository.PermissionManagement
             if (RoleId == 0) {
                 menuItems = (from m in _dbContext.Modules
                                where m.IsActive == true && m.IsDeleted == false
-                               select new MenuItem
+                             orderby m.SequenceNo ascending
+                             select new MenuItem
                                {
                                    ModuleId = m.Id,
                                    id = m.ModuleName.ToLower().Replace(" ", ""),
@@ -59,6 +60,7 @@ namespace LabelPad.Repository.PermissionManagement
                 string RoleName = _dbContext.Roles.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == RoleId).FirstOrDefault().Name;
                 menuItems = (from m in _dbContext.Modules
                              where m.IsActive == true && m.IsDeleted == false
+                             orderby m.SequenceNo ascending
                              select new MenuItem
                              {
                                  ModuleId = m.Id,
