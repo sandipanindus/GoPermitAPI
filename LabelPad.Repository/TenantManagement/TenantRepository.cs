@@ -211,6 +211,33 @@ namespace LabelPad.Repository.TenantManagement
             }
             return new { Message = "Saved Successfully" };
         }
+
+        public async Task<dynamic> UpdateVisitorParking(UpdateVistorsParkingRequest parkingRequest)
+        {
+            try
+            {
+
+                var existingparking = await _dbContext.VisitorParkingTemps.FindAsync(parkingRequest.Id);
+                if (existingparking == null) return null;
+
+                existingparking.StartTime = parkingRequest.StartTime;
+                existingparking.EndTime = parkingRequest.EndTime;
+                existingparking.VRMNumber = parkingRequest.VRMNumber;
+                existingparking.IsActive = true;
+                existingparking.IsDeleted = false;
+                existingparking.UpdatedOn = DateTime.Now;
+                existingparking.UpdatedBy = 1;
+
+                _dbContext.VisitorParkingTemps.Update(existingparking);
+                await _dbContext.SaveChangesAsync();
+                return existingparking;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<dynamic> GetSupportById(int Id, int TicketId, int TenantId)
         {
 

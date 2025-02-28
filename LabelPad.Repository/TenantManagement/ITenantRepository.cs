@@ -1,4 +1,5 @@
 ﻿using LabelPad.Domain.ApplicationClasses;
+using LabelPad.Domain.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,6 +9,7 @@ namespace LabelPad.Repository.TenantManagement
 {
    public  interface ITenantRepository
     {
+        Task<dynamic> UpdateVisitorParking(UpdateVistorsParkingRequest parkingRequest);
         Task<dynamic> AddVehicles(List<AddVehicleRegistrationAc> objinput);
 
         Task<dynamic> AddVehicleTimeSlot(List<AddVehicleTimeSlotAc> objinput);

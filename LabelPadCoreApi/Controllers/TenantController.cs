@@ -16,6 +16,7 @@ using LabelPad.Repository.TenantManagement;
 using LabelPad.Repository.VehicleRegistrationManagement;
 using LabelPadCoreApi.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -489,7 +490,35 @@ namespace LabelPadCoreApi.Controllers
             }
         }
         #endregion
+        #region UpdateVisitorParking
+        /// <summary>
+        /// UpdateVisitorParking
+        /// </summary>
+        /// <param name="vistorsParkingRequest"></param>
+        /// <returns></returns>
+        [HttpPost("UpdateVisitorParking")]
+        public async Task<IActionResult> UpdateVisitorParking([FromBody] UpdateVistorsParkingRequest vistorsParkingRequest)
+        {
+            AppLogs.InfoLogs("UpdateIndustry API called with data: {@Industry}");
 
+            if (vistorsParkingRequest == null || vistorsParkingRequest.Id <= 0)
+            {
+                AppLogs.InfoLogs("vistorsParkings: Received invalid data");
+                return BadRequest(new { Message = "Invalid data" });
+            }
+
+            var updateparking = await _tenantRepository.UpdateVisitorParking(vistorsParkingRequest);
+            if (updateparking == null)
+            {
+                AppLogs.InfoLogs("vistorsParkings: vistorsParkings with ID {Id} not found");
+                return NotFound(new { Message = "vistorsParkings not found" });
+            }
+
+            AppLogs.InfoLogs("vistorsParkings: Successfully updated vistorsParkings with ID: {Id}");
+            return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = updateparking });
+
+        }
+        #endregion
         #region SendEmail
         /// <summary>
         /// method to send the mail
