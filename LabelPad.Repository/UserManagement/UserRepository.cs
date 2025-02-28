@@ -899,16 +899,20 @@ namespace LabelPad.Repository.UserManagement
                                               c.EndDate,
 
                                               // Fetch only vehicles for the corresponding bay
-                                              vehiclereg = (from z in _dbContext.VehicleRegistrations
-                                                            where z.RegisterUserId == Id && z.IsActive == true && z.IsDeleted == false
-                                                            && z.ParkingBayNo == c.Id
-                                                            select new
-                                                            {
-                                                                z.VRM,
-                                                            }).ToList(),
+                                              //vehiclereg = (from z in _dbContext.VehicleRegistrations
+                                              //              where z.RegisterUserId == Id && z.IsActive == true && z.IsDeleted == false
+                                              //              && z.ParkingBayNo == c.Id
+                                              //              select new 
+                                              //              {
+                                              //                  z.VRM,
+                                              //              }).ToList(),
+                                               vehiclereg = _dbContext.VehicleRegistrations
+                                                .Where(z => z.RegisterUserId == Id && z.IsActive && !z.IsDeleted && z.ParkingBayNo == c.Id)
+                                                 .Select(z => z.VRM)
+                                                 .ToList(),
 
-                                              // Fetch only bay numbers related to this bayconfig
-                                              baynos = (from b in _dbContext.ParkingBayNos
+            // Fetch only bay numbers related to this bayconfig
+            baynos = (from b in _dbContext.ParkingBayNos
                                                         where b.IsActive == true && b.IsDeleted == false
                                                         && b.Id == c.Id // Ensure only related bay is included
                                                         select new
