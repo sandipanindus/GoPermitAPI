@@ -624,7 +624,32 @@ namespace LabelPad.Repository.SiteManagment
         {
             return new DateTime((dt.Ticks + d.Ticks - 1) / d.Ticks * d.Ticks, dt.Kind);
         }
+        
 
+            public async Task<dynamic> GetVisitorParkingsById(string TenantId, string id)
+            {
+            DateTime todayday = DateTime.UtcNow.Date;
+
+            var visitors2 = (from l in _dbContext.VisitorParkingTemps
+                             join r in _dbContext.RegisterUsers on l.RegisterUserId equals r.Id
+                             where l.RegisterUserId == Convert.ToInt32(TenantId) && l.Id == Convert.ToInt32(id) 
+                             && l.IsActive == false && l.IsDeleted == false
+                             && l.StartDate >= todayday
+                             select new
+                             {
+                                 Date = l.StartDate.ToString("dd-MM-yyyy"),
+                                 vrm = l.VRMNumber,
+                                 Name = l.Name + " " + l.Surname,
+                                 Contact = r.MobileNumber,
+                                 Starttime = l.StartTime,
+                                 Endtime = l.EndTime,
+                                 Id = l.Id,
+                                 status = false
+                             }).OrderByDescending(x => x.Id).ToList();
+
+
+            return (visitors2);
+        }
         public async Task<dynamic> GetVisitorParkings(string TenantId)
         {
             DateTime todayday = DateTime.UtcNow.Date;

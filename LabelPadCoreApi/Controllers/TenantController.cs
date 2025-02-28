@@ -61,6 +61,22 @@ namespace LabelPadCoreApi.Controllers
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
             }
         }
+
+        [HttpGet("GetVisitorParkingsById")]
+        public async Task<IActionResult> GetVisitorParkingsById(string tenantid,string id)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("GetSupportList Method was started,Controller:Admin");
+                var visitors = await _siteRepository.GetVisitorParkingsById(tenantid,id);
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
         #endregion
 
 

@@ -16,6 +16,7 @@ namespace LabelPad.Repository.SiteManagment
         Task<dynamic> CloseTicket(int Id);
         Task<dynamic> GetSupportAdminById(int Id);
         Task<dynamic> GetVisitorParkings(string TenantId);
+        Task<dynamic> GetVisitorParkingsById(string tenantid,string id);
         Task<dynamic> GetManageParkings(string TenantId);
         Task<dynamic> UpdateSupport(GetSupportCls obj);
         Task<dynamic> GetSupportListAdmin(int PageNo, int PageSize, int SiteId);
