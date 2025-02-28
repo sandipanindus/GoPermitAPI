@@ -161,16 +161,24 @@ namespace LabelPad.Repository.TenantManagement
 
         public async Task<dynamic> Getbaynobytenant(string tenantid)
         {
-            var parkingbays = await _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == Convert.ToInt32(tenantid)).Select(x => new { bayNo = x.Id, bayname = x.BayName, maxbayno = x.MaxVehiclesPerBay, startdate = x.StartDate, endate = x.EndDate }).ToListAsync();
-            //var parkingbays = (from  b in _dbContext.BayConfigs
-            //                   join pb in _dbContext.ParkingBayNos on b.ParkingBayNoId equals pb.Id
-            //                   select new
-            //                   {
-            //                       bayNo=b.Id,
-            //                       bayname=pb.BayName
-            //                   });
+            int tenantIdInt = Convert.ToInt32(tenantid);
+
+            var parkingbays = await _dbContext.ParkingBayNos
+                .Where(x => x.IsActive == true && x.IsDeleted == false &&
+                           (x.RegisterUserId == tenantIdInt || x.UpdatedBy == tenantIdInt))
+                .Select(x => new
+                {
+                    bayNo = x.Id,
+                    bayname = x.BayName,
+                    maxbayno = x.MaxVehiclesPerBay,
+                    startdate = x.StartDate,
+                    endate = x.EndDate
+                })
+                .ToListAsync();
+
             return parkingbays;
         }
+
         public async Task<dynamic> ReplySupport(AddSupportAc objinput)
         {
             try
