@@ -30,6 +30,7 @@ using Microsoft.VisualBasic;
 using LabelPad.Repository.ReportManagement;
 using LabelPad.Repository.TenantManagement;
 using LabelPad.Repository.IndustryManagement;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace LabelPadCoreApi.Controllers
 {
@@ -1692,12 +1693,20 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                var result = _userRepository.UpdateUserStatus(Id);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
+                var user = _dbContext.RegisterUsers
+                                    .Where(x => !x.IsDeleted && x.Id == Id)
+                                    .FirstOrDefault();
+                user.IsApproved = true;
+                user.IsActive = true;
+
+                _dbContext.RegisterUsers.Update(user);
+                await _dbContext.SaveChangesAsync();
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = "User status updated successfully" });
+
             }
             catch (Exception ex)
             {
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = ex.Message });
             }
         }
         #endregion
@@ -1840,7 +1849,7 @@ namespace LabelPadCoreApi.Controllers
                         bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Welcome ", body, "GOPERMIT_welcome");
                     }
                 }
-                var result = await _userRepository.UpdateTenantUser(addUser);
+                var result = await _userRepository.UpdateTenantUser_New(addUser);
                 if (result != null)
                 {
                     return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = addUser });
