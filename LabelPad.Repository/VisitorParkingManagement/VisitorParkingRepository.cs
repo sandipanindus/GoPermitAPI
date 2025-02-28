@@ -38,7 +38,7 @@ namespace LabelPad.Repository.VisitorParkingManagement
         {
             try
             {
-                var visitor = _dbContext.VisitorParkingTemps.Where(x => x.IsActive == false && x.IsDeleted == false && x.Id == Id).FirstOrDefault();
+                var visitor = _dbContext.VisitorParkingTemps.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == Id).FirstOrDefault();
                 if (visitor != null)
                 {
                     //var visitorvehicle = _dbContext.VisitorParkingVehicleDetails.Where(x => x.IsActive == true && x.IsDeleted == false && x.VisitorParkingId == Id).ToList();

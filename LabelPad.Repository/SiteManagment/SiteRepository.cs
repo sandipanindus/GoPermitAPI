@@ -633,7 +633,7 @@ namespace LabelPad.Repository.SiteManagment
             var visitors2 = (from l in _dbContext.VisitorParkingTemps
                              join r in _dbContext.RegisterUsers on l.RegisterUserId equals r.Id
                              where l.RegisterUserId == Convert.ToInt32(TenantId) && l.Id == Convert.ToInt32(id) 
-                             && l.IsActive == false && l.IsDeleted == false
+                             && l.IsActive == true && l.IsDeleted == false
                              && l.StartDate >= todayday
                              select new
                              {
@@ -673,7 +673,7 @@ namespace LabelPad.Repository.SiteManagment
             var visitors2 = (from l in _dbContext.VisitorParkingTemps
                              join r in _dbContext.RegisterUsers on l.RegisterUserId equals r.Id
                              where l.RegisterUserId == Convert.ToInt32(TenantId)
-                             && l.IsActive == false && l.IsDeleted == false
+                             && l.IsActive == true && l.IsDeleted == false
                              && l.StartDate >= todayday
                              select new
                              {
