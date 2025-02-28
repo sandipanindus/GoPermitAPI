@@ -880,6 +880,7 @@ namespace LabelPad.Repository.UserManagement
                             r.LastName,
                             r.MobileNumber,
                             r.ParentId,
+                            r.IsApproved,
                             r.ParkingBay,
                             r.RoleId,
                             r.SiteId,
