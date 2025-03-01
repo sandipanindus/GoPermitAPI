@@ -1005,6 +1005,7 @@ namespace LabelPad.Repository.SiteManagment
             site.ParkingBaySeperator = objsite.Seperator;
             site.ParkingBaySectionsOrFloors = Convert.ToInt32(objsite.Section);
             site.VisitorSeperator = objsite.VSeperator;
+            site.IndustryId = objsite.IndustryId;
             site.OperatorId = objsite.OperatorId;
             site.VisitorSectionsOrFloors = Convert.ToInt32(objsite.VSection);
             _dbContext.Sites.Add(site);
@@ -1244,6 +1245,7 @@ namespace LabelPad.Repository.SiteManagment
                             s.Zipcode,
                             s.VisitorSectionsOrFloors,
                             s.VisitorSeperator,
+                            s.IndustryId,
                             s.OperatorId,
                             bays = (from p in _dbContext.ParkingBays
                                     where p.SiteId == s.Id && p.IsActive == true && p.IsDeleted == false
@@ -1843,6 +1845,7 @@ namespace LabelPad.Repository.SiteManagment
                 site.UpdatedBy = objsite.LoginId;
                 site.MaxVehiclesPerBay = objsite.VehiclesPerBay;
                 site.OperatorId = objsite.OperatorId;
+                site.IndustryId = objsite.IndustryId;
                 site.UpdatedOn = DateTime.Now;
                 if (objsite.ParkingBays.Count != 0)
                 {

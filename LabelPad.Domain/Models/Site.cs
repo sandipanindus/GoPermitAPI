@@ -30,6 +30,7 @@ namespace LabelPad.Domain.Models
         public string VisitorParkingBays { get; set; }
 
         public int NoOfTotalBay { get; set; }
+        public int IndustryId { get; set; }
         public int ParkingBaySectionsOrFloors { get; set; }
         [StringLength(50)]
         public string ParkingBaySeperator { get; set; }
