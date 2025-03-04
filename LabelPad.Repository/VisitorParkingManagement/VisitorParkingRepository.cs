@@ -176,7 +176,7 @@ namespace LabelPad.Repository.VisitorParkingManagement
             {
                 VisitorParkingTemp visitor = new VisitorParkingTemp();
                 string[] Date = objvisitor.Date.Split('T');
-                visitor.IsActive = false;
+                visitor.IsActive = true;
                 visitor.IsDeleted = false;
                 visitor.CreatedBy = objvisitor.TenantId;
                 visitor.CreatedOn = DateTime.Now;
