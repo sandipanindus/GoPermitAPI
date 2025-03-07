@@ -56,7 +56,7 @@ namespace LabelPad.Repository.IndustryManagement
                 industry.IsActive = true;
                 industry.IsDelete = false;
                 industry.CreatedBy = "";
-                industry.CreatedDate = DateTime.Now;
+                // industry.CreatedDate = DateTime.Now;
                 _dbContext.Industry.Add(industry);
                 await _dbContext.SaveChangesAsync();
                 return industry;

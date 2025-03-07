@@ -642,7 +642,7 @@ namespace LabelPad.Repository.UserManagement
                                 //parkingobj.Status = true;
                                 //_dbContext.ParkingBayNos.Add(parkingobj);
                                 //_dbContext.SaveChanges();
-                                var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).FirstOrDefault();
+                                var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id && x.BayName == addUser.BayConfigs[i].bayid).FirstOrDefault();
                                 if (isParking != null)
                                 {
                                     if (addUser.BayConfigs[i].vehiclereg != "")
@@ -695,12 +695,12 @@ namespace LabelPad.Repository.UserManagement
                                         if (iscancelwhitelist == true)
                                         {
                                             Cancelwhitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
-                                            whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
+                                          //  whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
 
                                         }
                                         else
                                         {
-                                            whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
+                                          //  whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
                                         }
                                         // whitelistvehicle(Convert.ToInt32(addUser.SiteId), vr.VRM);
 
@@ -720,7 +720,7 @@ namespace LabelPad.Repository.UserManagement
                                 parkingbayno.StartDate = Convert.ToDateTime(startdate);
                                 parkingbayno.EndDate = Convert.ToDateTime(enddate);
                                 parkingbayno.MaxVehiclesPerBay = Convert.ToInt32(addUser.BayConfigs[i].vehiclesperbay);
-                                parkingbayno.UpdatedBy = 1;
+                                parkingbayno.UpdatedBy = user.Id;
                                 parkingbayno.UpdatedOn = DateTime.Now;
                                 _dbContext.ParkingBayNos.Update(parkingbayno);
                                 _dbContext.SaveChanges();
@@ -783,12 +783,12 @@ namespace LabelPad.Repository.UserManagement
                                         if (iscancelwhitelist == true)
                                         {
                                             Cancelwhitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
-                                            whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
+                                          //  whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
 
                                         }
                                         else
                                         {
-                                            whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
+                                          //  whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
                                         }
                                     }
 
@@ -1163,6 +1163,7 @@ namespace LabelPad.Repository.UserManagement
                         LastName = ds.Tables[0].Rows[i]["LastName"].ToString(),
                         MobileNumber = ds.Tables[0].Rows[i]["MobileNumber"].ToString(),
                         SiteName = ds.Tables[0].Rows[i]["SiteName"].ToString(),
+
                         VRM = ds.Tables[0].Rows[i]["VRM"].ToString()
                     });
                 }
@@ -1864,6 +1865,7 @@ namespace LabelPad.Repository.UserManagement
                         parkingBay.Status = true;
                         parkingBay.StartDate = Convert.ToDateTime(addUserAc.BayConfigs[i].StartDate);
                         parkingBay.EndDate = Convert.ToDateTime(addUserAc.BayConfigs[i].EndDate);
+                        parkingBay.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
                         parkingBay.IsActive = true;
                         parkingBay.IsDeleted = false;
                         parkingBay.UpdatedBy = user.Id;
@@ -1905,8 +1907,8 @@ namespace LabelPad.Repository.UserManagement
                 user.State = addUserAc.State;
                 user.City = addUserAc.City;
                 user.Address = addUserAc.Address;
-                //user.SiteId = Convert.ToInt32(addUserAc.SiteId);
-                //user.ParkingBay = addUserAc.ParkingBay;
+                user.SiteId = Convert.ToInt32(addUserAc.SiteId);
+                user.ParkingBay = addUserAc.ParkingBay;
                 user.ZipCode = addUserAc.Zipcode;
                 user.UpdatedOn = DateTime.Now;
                 user.ClientId = addUserAc.ParentId;

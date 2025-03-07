@@ -30,6 +30,7 @@ namespace LabelPad.Domain.ApplicationClasses
         public int TotalItem { get; set; }
         public double TotalPage { get; set; }
         public string SiteName { get; set; }
+
         public string VRM { get; set; }
     }
     public class GetSearchSiteCls

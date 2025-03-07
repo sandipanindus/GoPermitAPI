@@ -161,6 +161,7 @@ namespace LabelPad.Repository.SiteManagment
                                          id = Convert.ToString(rw["Id"]),
                                         // bayName = Convert.ToString(rw["BayName"]) + " " + Convert.ToString(rw["FirstName"]) + " " + Convert.ToString(rw["LastName"]),
                                          bayName = Convert.ToString(rw["BayName"]),
+                                         updatedBy = Convert.ToString(rw["UpdatedBy"])
                                        
 
 
