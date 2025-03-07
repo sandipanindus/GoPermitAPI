@@ -36,6 +36,10 @@ namespace LabelPad.Repository.UserManagement
        Task<dynamic> GetSearchUsers(int PageNo, int PageSize, string FirstName, string LastName, string Email,string SiteName, int LoginId, int RoleId, int SiteId);
         Task<dynamic> GetSearchTenants(int PageNo, int PageSize, string FirstName, string LastName, string Email, string MobileNumber, string SiteName, int SiteId, string VRM);
         Task<dynamic> BulkInsertUsersFromExcel(IFormFile file);
-        bool SendEmail(string EmailId, string User, string Subject, string Body, string Headeraname);
+        Task<bool> SendEmailAsync(string EmailId, string User, string Subject, string Body, string Headeraname);
+        Task<bool> SendEmailAdminAsync(string EmailId, string Subject, string Body, string Headeraname);
+        //public bool SendEmail(string EmailId, string User, string Subject, string Body, string Headeraname);
+        //public bool SendEmailAdmin(string EmailId, string Subject, string Body, string Headeraname);
+        Task<string> GetAccessTokenAsync();
     }
 }

@@ -11,7 +11,7 @@ namespace LabelPad.Repository.TenantManagement
     {
         Task<dynamic> UpdateVisitorParking(UpdateVistorsParkingRequest parkingRequest);
         Task<dynamic> AddVehicles(List<AddVehicleRegistrationAc> objinput);
-
+        Task<dynamic> AddVehicle_New(List<AddVehicleRegistrationAc> objinput);
         Task<dynamic> AddVehicleTimeSlot(List<AddVehicleTimeSlotAc> objinput);
 
         Task<dynamic> AddSupport(AddSupportAc objinput);

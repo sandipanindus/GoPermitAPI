@@ -21,6 +21,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Threading;
+using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Auth.OAuth2;
+using Newtonsoft.Json.Linq;
+using System.Net.Http;
 
 namespace LabelPad.Repository.UserManagement
 {
@@ -61,8 +66,7 @@ namespace LabelPad.Repository.UserManagement
         }
         public async Task<dynamic> AddUser(AddUserAc addUser)
         {
-            try
-            {
+           
                 await _dbContext.RegisterUsers.AddAsync(new RegisterUser
                 {
                     FirstName = addUser.FirstName,
@@ -90,11 +94,7 @@ namespace LabelPad.Repository.UserManagement
                     IsOperator = addUser.IsOperator
                 });
                 await _dbContext.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-
-            }
+           
             return new { Message = "User saved successfully" };
         }
 
@@ -107,8 +107,7 @@ namespace LabelPad.Repository.UserManagement
         }
         public async Task<dynamic> AddTenant(UpdateRegisterUserAc model)
         {
-            try
-            {
+           
                 RegisterUser user = new RegisterUser();
                 user.FirstName = model.FirstName;
                 user.LastName = model.LastName;
@@ -132,11 +131,7 @@ namespace LabelPad.Repository.UserManagement
                 user.CreatedOn = DateTime.Now;
                 _dbContext.RegisterUsers.Add(user);
                 _dbContext.SaveChanges();
-            }
-            catch (Exception ex)
-            {
-
-            }
+           
 
             return new { Message = "User saved successfully" };
         }
@@ -540,8 +535,7 @@ namespace LabelPad.Repository.UserManagement
         {
             bool iscancelwhitelist = false;
             //bool issentzatpark = false;
-            try
-            {
+           
                 int siteid = 0;
                 if (addUser.SiteName != null)
                 {
@@ -808,11 +802,7 @@ namespace LabelPad.Repository.UserManagement
 
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-
-            }
+            
             return new { Message = "User saved successfully" };
         }
 
@@ -1367,8 +1357,7 @@ namespace LabelPad.Repository.UserManagement
             int count2 = count1 * PageNo - count1;
             if (RoleId == 1)
             {
-                try
-                {
+                
 
                     int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2 && x.IsSiteUser == true).Count();
                     double totalpa = (double)totalitems / (double)PageSize;
@@ -1396,11 +1385,7 @@ namespace LabelPad.Repository.UserManagement
 
                     users = users.Skip(count2).Take(count1).ToList();
                     return users;
-                }
-                catch (Exception ex)
-                {
-                    return ex.Message;
-                }
+                
 
             }
             else
@@ -1472,8 +1457,7 @@ namespace LabelPad.Repository.UserManagement
             int count2 = count1 * PageNo - count1;
             if (RoleId == 1)
             {
-                try
-                {
+              
 
                     int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2 && x.IsOperator == true).Count();
                     double totalpa = (double)totalitems / (double)PageSize;
@@ -1501,11 +1485,7 @@ namespace LabelPad.Repository.UserManagement
 
                     users = users.Skip(count2).Take(count1).ToList();
                     return users;
-                }
-                catch (Exception ex)
-                {
-                    return ex.Message;
-                }
+                
 
             }
             else
@@ -1631,47 +1611,183 @@ namespace LabelPad.Repository.UserManagement
             }
             return new { Message = "Updated Successfully" };
         }
+        //public async Task<dynamic> UpdateProfileUploads(UpdateRegisterUserAc objinput)
+        //{
+
+
+
+        //        int Id = objinput.Id;
+        //        RegisterUser user = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == Id).FirstOrDefault();
+        //        if (user != null)
+        //        {
+        //            if (objinput.ResidencyProof != null)
+        //            {
+        //                user.ResidencyProofId = objinput.ResidencyProof;
+        //            }
+
+        //            if (objinput.IdentityProof != null)
+        //            {
+        //                user.IdentityProofId = objinput.IdentityProof;
+        //            }
+
+        //            user.IsActive = true;
+        //            _dbContext.RegisterUsers.Update(user);
+        //            _dbContext.SaveChanges();
+
+        //        }
+        //        return new { Message = "Updated Successfully" };
+
+
+
+        //}
+
         public async Task<dynamic> UpdateProfileUploads(UpdateRegisterUserAc objinput)
+        {
+            int Id = objinput.Id;
+            RegisterUser user = _dbContext.RegisterUsers
+                .Where(x => x.IsDeleted == false && x.Id == Id)
+                .FirstOrDefault();
+
+            if (user != null)
+            {
+                if (objinput.ResidencyProof != null)
+                {
+                    user.ResidencyProofId = objinput.ResidencyProof;
+                }
+
+                if (objinput.IdentityProof != null)
+                {
+                    user.IdentityProofId = objinput.IdentityProof;
+                }
+
+                user.IsActive = true;
+                _dbContext.RegisterUsers.Update(user);
+                _dbContext.SaveChanges();
+
+
+
+                var folderNameObj = Path.Combine("EmailHtml", "AdminUploadDocuments.html");
+                var filePathObj = Path.Combine(Directory.GetCurrentDirectory(), folderNameObj);
+
+                StreamReader reader = new StreamReader(filePathObj);
+
+                string readFile = reader.ReadToEnd();
+                string myString = "";
+                myString = readFile;
+                string dt = DateTime.Now.ToString("MM.dd.yyyy");
+                myString = myString.Replace("%{#{Datetime}#}%", dt);
+                myString = myString.Replace("%{#{Name}#}%", user.FirstName + " " + user.LastName);
+                string body = myString;
+
+                bool emailSent =await SendEmailAsync(_configuration["AdminTenantMail"], user.FirstName, "Tenant Verification", body, "GOPERMIT_Tenant Verification");
+
+                //bool emailSent = SendEmail(_configuration["AdminTenantMail"], "Go Permit New Customer Application", body, "Go Permit New Customer Application");
+               
+                if (!emailSent)
+                {
+                    return new { Message = "Profile updated, but email sending failed" };
+                }
+
+                return new { Message = "Updated Successfully and Email Sent" };
+            }
+
+            return new { Message = "User Not Found" };
+        }
+
+        public async Task<bool> SendEmailAdminAsync(string EmailId, string Subject, string Body, string Headeraname)
         {
             try
             {
+                // Get OAuth credentials from appsettings.json
+                string clientId = _configuration["OAuthClientId"];
+                string clientSecret = _configuration["OAuthClientSecret"];
+                string refreshToken = _configuration["OAuthRefreshToken"];
 
+                // Get Access Token using the Refresh Token
+                string accessToken = await GetAccessToken(clientId, clientSecret, refreshToken);
 
-                int Id = objinput.Id;
-                RegisterUser user = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == Id).FirstOrDefault();
-                if (user != null)
+                if (string.IsNullOrEmpty(accessToken))
                 {
-                    if (objinput.ResidencyProof != null)
-                    {
-                        user.ResidencyProofId = objinput.ResidencyProof;
-                    }
-
-                    if (objinput.IdentityProof != null)
-                    {
-                        user.IdentityProofId = objinput.IdentityProof;
-                    }
-
-                    user.IsActive = true;
-                    _dbContext.RegisterUsers.Update(user);
-                    _dbContext.SaveChanges();
-
+                    throw new Exception("Failed to retrieve access token.");
                 }
-                return new { Message = "Updated Successfully" };
 
+                using (SmtpClient client = new SmtpClient())
+                {
+                    client.Host = _configuration["Host"]; // smtp.gmail.com
+                    client.Port = Convert.ToInt32(_configuration["Port"]); // 587
+                    client.EnableSsl = true;
+                    client.UseDefaultCredentials = false;
+
+                    // Use OAuth2 authentication instead of password
+                    client.Credentials = new NetworkCredential(_configuration["AdminMail"], accessToken);
+
+                    MailMessage mailMessage = new MailMessage
+                    {
+                        From = new MailAddress(_configuration["AdminMail"], Headeraname),
+                        Subject = Subject,
+                        Body = Body,
+                        IsBodyHtml = true
+                    };
+
+                    mailMessage.To.Add(new MailAddress(EmailId));
+
+                    client.Send(mailMessage);
+                    return true;
+                }
             }
-
-
             catch (Exception ex)
             {
-                return new { Message = "Error occurred", Error = ex.Message };
+                Console.WriteLine("Error sending email: " + ex.Message);
+                return false;
             }
-
         }
+
+
+        //public bool SendEmailAdmin(string EmailId, string Subject, string Body, string Headeraname)
+        //{
+
+        //    SmtpClient client = new SmtpClient();
+        //    //  client.DeliveryMethod = SmtpDeliveryMethod.Network;
+        //    client.EnableSsl = Convert.ToBoolean(_configuration["SSL"]);
+        //    client.Host = _configuration["Host"];
+        //    client.Port = Convert.ToInt32(_configuration["Port"]);
+
+        //    NetworkCredential credentials = new NetworkCredential();
+        //    client.UseDefaultCredentials = false;
+        //    credentials.UserName = _configuration["AdminMail"];
+        //    credentials.Password = _configuration["Password"];
+        //    client.Credentials = credentials;
+
+
+        //    MailMessage mailMessage = new MailMessage();
+        //    mailMessage.From = new MailAddress(_configuration["AdminMail"],
+        //       Headeraname);
+        //    mailMessage.To.Add(new MailAddress(EmailId));
+
+        //    mailMessage.Subject = Subject;
+        //    mailMessage.IsBodyHtml = true;
+        //    string Body1 = Body;
+
+        //    mailMessage.Body = Body1;
+        //    try
+        //    {
+        //        //AppLogs.InfoLogs("Start  test email sending AT client.Send(mailMessage) STATEMENT, Login Controller FORM, Method :SendMail");
+        //        client.Send(mailMessage);
+        //        //AppLogs.InfoLogs("End  test email sending AT client.Send(mailMessage) STATEMENT, Login Controller FORM, Method :SendMail");
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //AppLogs.InfoLogs("Error  Sending Mail , Login FORM, Method :SendMail" + ex.ToString());
+        //        return true;
+        //    }
+        //}
+
 
         public async Task<dynamic> UpdateUserStatus(int Id)
         {
-            try
-            {
+            
                 var user = _dbContext.RegisterUsers
                     .Where(x => !x.IsDeleted && x.Id == Id)
                     .FirstOrDefault();
@@ -1688,11 +1804,7 @@ namespace LabelPad.Repository.UserManagement
                 await _dbContext.SaveChangesAsync();
 
                 return new { Message = "User status updated successfully" };
-            }
-            catch (Exception ex)
-            {
-                return new { Message = "Error occurred", Error = ex.Message };
-            }
+           
         }
 
         public async Task<dynamic> UpdateTenantUser_New(AddTenantUser addUserAc)
@@ -1783,8 +1895,7 @@ namespace LabelPad.Repository.UserManagement
         private bool UpdateUserInTenant(AddTenantUser addUserAc, RegisterUser user)
         {
 
-            try
-            {
+           
 
                 user.FirstName = addUserAc.FirstName;
                 user.LastName = addUserAc.LastName;
@@ -1814,11 +1925,7 @@ namespace LabelPad.Repository.UserManagement
                 _dbContext.SaveChanges();
 
                 return true;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+           
 
         }
 
@@ -1935,8 +2042,74 @@ namespace LabelPad.Repository.UserManagement
                 return new { Message = "No data Found" };
             }
         }
-        #region SendEmail1
-        /// <summary>
+
+        //public async Task<bool> SendEmailAsync(string EmailId, string User, string Subject, string Body, string Headeraname)
+        //{
+        //    try
+        //    {
+        //        // Get OAuth credentials from appsettings.json
+        //        string clientId = _configuration["OAuthClientId"];
+        //        string clientSecret = _configuration["OAuthClientSecret"];
+        //        string refreshToken = _configuration["OAuthRefreshToken"];
+
+        //        // Get Access Token using the Refresh Token
+        //        string accessToken = await GetAccessToken(clientId, clientSecret, refreshToken);
+
+        //        if (string.IsNullOrEmpty(accessToken))
+        //        {
+        //            throw new Exception("Failed to retrieve access token.");
+        //        }
+
+        //        using (SmtpClient client = new SmtpClient())
+        //        {
+        //            client.Host = _configuration["Host"]; // smtp.gmail.com
+        //            client.Port = Convert.ToInt32(_configuration["Port"]); // 587
+        //            client.EnableSsl = true;
+        //            client.UseDefaultCredentials = false;
+
+        //            // Use OAuth2 authentication
+        //            client.Credentials = new NetworkCredential(_configuration["AdminMail"], accessToken);
+        //            client.TargetName = "SMTPSVC"; // Required for OAuth2 with Gmail
+
+        //            MailMessage mailMessage = new MailMessage
+        //            {
+        //                From = new MailAddress(_configuration["AdminMail"], Headeraname),
+        //                Subject = Subject,
+        //                Body = Body,
+        //                IsBodyHtml = true
+        //            };
+
+        //            mailMessage.To.Add(new MailAddress(EmailId));
+
+        //            await client.SendMailAsync(mailMessage); // Use async version of SendMail
+        //            return true;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine("Error sending email: " + ex.Message);
+        //        return false;
+        //    }
+        //}
+
+        private async Task<string> GetAccessToken(string clientId, string clientSecret, string refreshToken)
+        {
+            var tokenRequest = new Google.Apis.Auth.OAuth2.Requests.RefreshTokenRequest
+            {
+                ClientId = clientId,
+                ClientSecret = clientSecret,
+                RefreshToken = refreshToken
+            };
+
+            var tokenResponse = await new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow(
+                new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = new ClientSecrets { ClientId = clientId, ClientSecret = clientSecret }
+                }).RefreshTokenAsync("user", refreshToken, System.Threading.CancellationToken.None);
+
+            return tokenResponse.AccessToken;
+        }
+
         /// method to send the mail
         /// </summary>
         /// <param name="EmailId"></param>
@@ -1944,7 +2117,7 @@ namespace LabelPad.Repository.UserManagement
         /// <param name="EmailCode"></param>
         /// <param name="ActivateLink"></param>
         /// <returns></returns>
-        public bool SendEmail(string EmailId, string User, string Subject, string Body, string Headeraname)
+        public async Task<bool> SendEmailAsync(string EmailId, string User, string Subject, string Body, string Headeraname)
         {
 
             SmtpClient client = new SmtpClient();
@@ -1984,11 +2157,9 @@ namespace LabelPad.Repository.UserManagement
                 return true;
             }
         }
-        #endregion
         public async Task<dynamic> BulkInsertUsersFromExcel(IFormFile file)
         {
-            try
-            {
+           
                 if (file == null || file.Length == 0)
                     return new { Status = "-100", Message = "Invalid file" };
 
@@ -2092,7 +2263,7 @@ namespace LabelPad.Repository.UserManagement
                             myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                             string body = myString;
-                            SendEmail(user.Email, user.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
+                            SendEmailAsync(user.Email, user.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
                         }
                     }
 
@@ -2100,11 +2271,30 @@ namespace LabelPad.Repository.UserManagement
                 return new { Status = "200", Message = "Users inserted successfully", Result = users.Count };
                 
 
-            }
-            catch (Exception ex)
-            {
-                return new { Status = "-500", Message = "Error occurred", Error = ex.Message };
-            }
         }
+
+        public async Task<string> GetAccessTokenAsync()
+        {
+            var tokenResponse = new Google.Apis.Auth.OAuth2.Responses.TokenResponse
+            {
+                RefreshToken = _configuration["OAuth_Refresh_Token"],
+            };
+            var credential = new UserCredential(
+                new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = new ClientSecrets
+                    {
+                        ClientId = _configuration["OAuth_Client_Id"],
+                        ClientSecret = _configuration["OAuth_Client_Secret"],
+                    }
+                }),
+                "user",
+                tokenResponse);
+
+            await credential.RefreshTokenAsync(CancellationToken.None);
+            return credential.Token.AccessToken;
+        }
+
+
     }
 }

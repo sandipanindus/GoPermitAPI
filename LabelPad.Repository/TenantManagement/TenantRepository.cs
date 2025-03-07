@@ -42,9 +42,8 @@ namespace LabelPad.Repository.TenantManagement
         public async Task<dynamic> Getvehiclecountsdetails(string tenantid, string bayno)
         {
             DateTime todaydate = DateTime.Now;
-            try
-            {
-                var vehicles = (from v in _dbContext.VehicleRegistrations
+       
+            var vehicles = (from v in _dbContext.VehicleRegistrations
                                 join pb in _dbContext.ParkingBayNos on v.ParkingBayNo equals pb.Id
                                 where v.RegisterUserId == Convert.ToInt32(tenantid) && v.ParkingBayNo == Convert.ToInt32(bayno)
                                 && v.IsActive == true && v.IsDeleted == false && pb.IsActive == true && pb.IsDeleted == false && v.EndDate > todaydate
@@ -106,12 +105,8 @@ namespace LabelPad.Repository.TenantManagement
 
 
                 return vehicles;
-            }
-            catch (Exception ex)
-            {
-
-            }
-            return "";
+           
+          
 
             // var vehicles = await _dbContext.VehicleRegistrations.Where(x=>x.IsActive==true && x.IsDeleted==false && x.RegisterUserId==Convert.ToInt32(tenantid)).ToListAsync();
 
@@ -181,8 +176,7 @@ namespace LabelPad.Repository.TenantManagement
 
         public async Task<dynamic> ReplySupport(AddSupportAc objinput)
         {
-            try
-            {
+           
                 var updatestaus = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == objinput.TicketId).FirstOrDefault();
                 if (updatestaus != null)
                 {
@@ -212,18 +206,13 @@ namespace LabelPad.Repository.TenantManagement
                 obj.CreatedOn = DateTime.Now;
                 _dbContext.Supports.Add(obj);
                 _dbContext.SaveChanges();
-            }
-            catch (Exception ex)
-            {
-
-            }
+            
             return new { Message = "Saved Successfully" };
         }
 
         public async Task<dynamic> UpdateVisitorParking(UpdateVistorsParkingRequest parkingRequest)
         {
-            try
-            {
+            
 
                 var existingparking = await _dbContext.VisitorParkingTemps.FindAsync(parkingRequest.Id);
                 if (existingparking == null) return null;
@@ -239,11 +228,7 @@ namespace LabelPad.Repository.TenantManagement
                 _dbContext.VisitorParkingTemps.Update(existingparking);
                 await _dbContext.SaveChangesAsync();
                 return existingparking;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            
         }
 
         public async Task<dynamic> GetSupportById(int Id, int TicketId, int TenantId)
@@ -429,8 +414,7 @@ namespace LabelPad.Repository.TenantManagement
         }
         public async Task<dynamic> AddSupport(AddSupportAc objinput)
         {
-            try
-            {
+           
                 Support obj = new Support();
                 obj.RegisterUserId = objinput.TenantId;
                 obj.Subject = objinput.Subject;
@@ -451,11 +435,7 @@ namespace LabelPad.Repository.TenantManagement
                     _dbContext.Supports.Update(support);
                     _dbContext.SaveChanges();
                 }
-            }
-            catch (Exception ex)
-            {
-
-            }
+           
             return new { Message = "Saved Successfully" };
         }
         public async Task<dynamic> AddVehicles(List<AddVehicleRegistrationAc> objinput)
@@ -464,8 +444,7 @@ namespace LabelPad.Repository.TenantManagement
             UserManagement.UserRepository usrepo = new UserManagement.UserRepository(_dbContext, _configuration);
             var Reguserssiteid = _dbContext.RegisterUsers.Where(x => x.Id == objinput[0].TenantId && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().SiteId;
 
-            try
-            {
+           
                 var siteparkingbayno = Convert.ToInt32(objinput[0].bayno);
                 var vrmcompare = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == objinput[0].TenantId && x.ParkingBayNo == siteparkingbayno).FirstOrDefault();
                 
@@ -828,13 +807,108 @@ namespace LabelPad.Repository.TenantManagement
                     }
                 }
                
-            }
-            catch (Exception ex)
-            {
-
-            }
+            
             return new { Message = "Saved Successfully" };
         }
+
+        public async Task<dynamic> AddVehicle_New(List<AddVehicleRegistrationAc> objinput)
+        {
+            var tenantBayList = objinput.Select(x => new { x.TenantId, BayNo = Convert.ToInt32(x.bayno) }).ToList();
+
+            var existingVehicles = _dbContext.VehicleRegistrations
+    .Where(v => v.IsActive)
+    .AsEnumerable()
+    .Where(v => tenantBayList.Any(tb => tb.TenantId == v.RegisterUserId && tb.BayNo == v.ParkingBayNo))
+    .ToList();
+
+
+            if (existingVehicles.Any())
+            {
+                foreach (var item in existingVehicles)
+                {
+                    item.IsDeleted = true;
+                    item.IsActive = false;
+                    item.UpdatedOn = DateTime.Now;
+                }
+                _dbContext.VehicleRegistrations.UpdateRange(existingVehicles);
+                await _dbContext.SaveChangesAsync();
+            }
+
+            // Update existing time slots
+            var existingVehicleIds = existingVehicles.Select(v => v.Id).ToList();
+            var existingTimeSlots = _dbContext.VehicleRegistrationTimeSlots
+                .Where(x => existingVehicleIds.Contains(x.VehicleRegistrationId))
+                .ToList();
+
+            if (existingTimeSlots.Any())
+            {
+                foreach (var slot in existingTimeSlots)
+                {
+                    slot.IsDeleted = false;
+                    slot.IsActive = true;
+                    slot.UpdatedBy = slot.CreatedBy;
+                    slot.UpdatedOn = DateTime.Now;
+                }
+                _dbContext.VehicleRegistrationTimeSlots.UpdateRange(existingTimeSlots);
+                await _dbContext.SaveChangesAsync();
+            }
+
+            foreach (var input in objinput)
+            {
+                var user = _dbContext.RegisterUsers
+                    .FirstOrDefault(x => !x.IsDeleted && x.Id == input.TenantId && x.IsActive);
+
+                if (user == null) continue;
+
+                int bayno = Convert.ToInt32(input.bayno);
+                var newVehicle = new VehicleRegistration
+                {
+                    IsActive = true,
+                    IsDeleted = false,
+                    IsSaveCount = 1,
+                    RegisterUserId = user.Id,
+                    VRM = input.vrm,
+                    CreatedOn = DateTime.Now,
+                    CreatedBy = user.Id,
+                    StartDate = Convert.ToDateTime(input.StartDate),
+                    EndDate = Convert.ToDateTime(input.EndDate),
+                    ParkingBayNo = bayno
+                };
+
+                _dbContext.VehicleRegistrations.Add(newVehicle);
+                await _dbContext.SaveChangesAsync();
+
+                var parkingBay = _dbContext.ParkingBayNos
+                    .FirstOrDefault(pb => pb.Id == bayno && !pb.IsDeleted && pb.IsActive);
+
+                if (parkingBay != null)
+                {
+                    parkingBay.Status = true;
+                    parkingBay.StartDate = newVehicle.StartDate;
+                    parkingBay.EndDate = newVehicle.EndDate;
+                    parkingBay.IsActive = true;
+                    parkingBay.IsDeleted = false;
+                    parkingBay.UpdatedBy = user.Id;
+                    parkingBay.UpdatedOn = DateTime.Now;
+
+                    _dbContext.ParkingBayNos.Update(parkingBay);
+                    await _dbContext.SaveChangesAsync();
+                }
+
+                if (DateTime.TryParse(input.dates, out DateTime parsedDate))
+                {
+                    savemutliplevehciledates(newVehicle.Id, parsedDate.ToString("yyyy-MM-dd"), newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
+                }
+                else
+                {
+                    savemutliplevehciletime(newVehicle.Id, newVehicle.StartDate, newVehicle.EndDate, 0);
+                }
+            }
+
+            return new { Message = "Vehicles updated and new records inserted successfully" };
+        }
+
+
 
 
         private async Task<bool> savemutliplevehciletime(int id, DateTime? startdate, DateTime? enddate, int issavecount)

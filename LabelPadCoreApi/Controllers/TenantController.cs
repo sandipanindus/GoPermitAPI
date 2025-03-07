@@ -290,7 +290,7 @@ namespace LabelPadCoreApi.Controllers
             {
 
 
-                var result = await _tenantRepository.AddVehicles(objdata);
+                var result = await _tenantRepository.AddVehicle_New(objdata);
                 if (result != null)
                 {
                     return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = objdata });
