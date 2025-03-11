@@ -28,7 +28,7 @@ namespace LabelPad.Domain.Models
         public string TenantParkingBays { get; set; }
         [StringLength(100)]
         public string VisitorParkingBays { get; set; }
-
+        public string EnforcementService { get; set; }
         public int NoOfTotalBay { get; set; }
         public int IndustryId { get; set; }
         public int ParkingBaySectionsOrFloors { get; set; }

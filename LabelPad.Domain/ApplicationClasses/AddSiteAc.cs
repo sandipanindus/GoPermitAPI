@@ -37,6 +37,7 @@ namespace LabelPad.Domain.ApplicationClasses
         public string maxparkingsession { get; set; }
         public string TimeUnit { get; set; }
         public string SiteCode { get; set; }
+        public string EnforcementService { get; set; }
         public List<ParkingBays> ParkingBays { get; set; }
         public List<VisitorBays> VisitorBays { get; set; }
         public List<VisitorSession> VisitorSessions { get; set; }
