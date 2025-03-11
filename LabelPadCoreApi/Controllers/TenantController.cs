@@ -277,6 +277,49 @@ namespace LabelPadCoreApi.Controllers
         }
         #endregion
 
+
+        #region UpdateVehicles
+        /// <summary>
+        /// method to add vehicle
+        /// </summary>
+        /// <param name="objdata"></param>
+        /// <returns></returns>
+        [HttpPost("UpdateVehicles")]
+        public async Task<IActionResult> UpdateVehicles([FromBody] List<AddVehicleRegistrationAc> objInput)
+        {
+            if (objInput == null || objInput.Count == 0)
+            {
+                return Ok(new ApiServiceResponse() { Status = "400", Message = "Input data cannot be empty.", Result = null });
+            }
+
+            try
+            {
+                var result = await _tenantRepository.UpdateVehicle(objInput);
+                var resultData = result as dynamic; 
+                if (resultData != null && resultData.Messages != null)
+                {
+                    if (resultData.Messages.Contains("Record updated successfully"))
+                    {
+                        return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = resultData });
+                    }
+                    else if (resultData.Messages.Contains("Range Already Exist"))
+                    {
+                        return Ok(new ApiServiceResponse() { Status = "-200", Message = "Failure", Result = resultData });
+                    }
+                    else
+                    {
+                        return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = resultData });
+                    }
+                }
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = result });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = ex.Message });
+            }
+        }
+        #endregion
+
         #region AddVehicles
         /// <summary>
         /// method to add vehicle
@@ -288,22 +331,23 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
+                var response = await _tenantRepository.AddVehicle_New(objdata);
 
-
-                var result = await _tenantRepository.AddVehicle_New(objdata);
-                if (result != null)
+                if (response.Message == "Range Already Exist")
                 {
-                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = objdata });
+                    return Ok(new ApiServiceResponse() { Status = "-200", Message = "Failure", Result = response });
+                }
+                else if (response.Message == "Vehicles updated and new records inserted successfully")
+                {
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = response });
                 }
                 else
                 {
-                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = objdata });
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = response });
                 }
-
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the AddSite Method,Controller:Admin" + ex.ToString());
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
             }
         }
@@ -619,6 +663,23 @@ namespace LabelPadCoreApi.Controllers
             }
         }
 
+        [HttpGet("getvehcilecountsById")]
+        public async Task<IActionResult> GetvehiclecountsdetailsById(string tenantid, string bayno, int Id)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
+                var vehicles = await _tenantRepository.GetvehiclecountsdetailsById(tenantid, bayno, Id);
+
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = vehicles });
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+        
 
         [HttpGet("getvehcilecountsbydates")]
         public async Task<IActionResult> getvehcilecountsbydates(string tenantid, string bayno, string date)

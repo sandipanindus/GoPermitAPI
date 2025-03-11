@@ -159,7 +159,7 @@ namespace LabelPadCoreApi.Controllers
         }
 
         [HttpPost("CreateOperators")]
-        public async Task<ActionResult<OperatorDetails>> CreateOperator(OperatorDetails operatorDetail)
+        public async Task<ActionResult<OperatorDetails>> CreateOperators(OperatorDetails operatorDetail)
         {
             try
             { 
