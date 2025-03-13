@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using LabelPad.Repository.RegisterManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.OpenApi.Models;
+
 using System.IO;
 using Microsoft.Extensions.FileProviders;
 using LabelPad.Repository.RoleManagement;
@@ -23,6 +24,9 @@ using LabelPad.Repository.ReportManagement;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using LabelPad.Repository.OperatorManagement;
 using LabelPad.Repository.IndustryManagement;
+using LabelPadCoreApi.Models;
+using Microsoft.Extensions.Options;
+using EmailSettings = LabelPadCoreApi.Models.EmailSettings;
 
 namespace LabelPadCoreApi
 {
@@ -52,6 +56,12 @@ namespace LabelPadCoreApi
             //        .AllowCredentials());
             //});
             services.AddControllers();
+
+
+            services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
+
+
+
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
