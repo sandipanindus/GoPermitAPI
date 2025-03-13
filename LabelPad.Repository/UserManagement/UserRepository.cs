@@ -1,4 +1,8 @@
-﻿using LabelPad.Domain.ApplicationClasses;
+﻿
+using System;
+using LabelPad.Domain.ApplicationClasses;
+using Microsoft.Extensions.Options;
+
 using LabelPad.Domain.Data;
 using LabelPad.Domain.Models;
 using Microsoft.AspNetCore.Http;
@@ -7,7 +11,6 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using OfficeOpenXml;
 using RestSharp;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -22,10 +25,22 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Threading;
+using Microsoft.Extensions.Options;
+using MailKit.Security;
+using MimeKit;
+using System.Net.Http;
+using System.Text.Json;
+
+
+
+
+
+
 
 
 namespace LabelPad.Repository.UserManagement
 {
+
 
     public class Xml1
     {
@@ -56,10 +71,14 @@ namespace LabelPad.Repository.UserManagement
     {
         private readonly LabelPadDbContext _dbContext;
         private readonly IConfiguration _configuration;
-        public UserRepository(LabelPadDbContext dbContext, IConfiguration configuration)
+        private readonly EmailSettings _emailSettings;
+
+
+        public UserRepository(LabelPadDbContext dbContext, IConfiguration configuration, IOptions<EmailSettings> emailSettings)
         {
             _dbContext = dbContext;
             _configuration = configuration;
+            _emailSettings = emailSettings.Value;
         }
         public async Task<dynamic> AddUser(AddUserAc addUser)
         {
@@ -2118,7 +2137,98 @@ namespace LabelPad.Repository.UserManagement
         /// <param name="EmailCode"></param>
         /// <param name="ActivateLink"></param>
         /// <returns></returns>
-        public async Task<bool> SendEmailAsync(string EmailId, string User, string Subject, string Body, string Headeraname)
+        /// 
+        //public async Task<bool> SendEmailAsync(string EmailId, string User, string Subject, string Body, string HeaderName)
+        //{
+        //    try
+        //    {
+
+        //        string accessToken = await GetAccessTokenAsync();
+
+        //        var message = new MimeMessage();
+        //        message.From.Add(new MailboxAddress(HeaderName, _emailSettings.AdminMail));
+        //        message.To.Add(new MailboxAddress("", EmailId));
+        //        message.Subject = Subject;
+
+        //        var bodyBuilder = new BodyBuilder { HtmlBody = Body };
+        //        message.Body = bodyBuilder.ToMessageBody();
+
+        //        using var client = new MailKit.Net.Smtp.SmtpClient();
+        //        await client.ConnectAsync(_emailSettings.SMTP_Host, _emailSettings.SMTP_Port, SecureSocketOptions.StartTls);
+        //        await client.AuthenticateAsync(new SaslMechanismOAuth2(_emailSettings.Username, accessToken));
+        //        await client.SendAsync(message);
+        //        await client.DisconnectAsync(true);
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log error
+        //        return false;
+        //    }
+        //}
+
+        public async Task<bool> SendEmailAsync(string EmailId, string User, string Subject, string Body, string HeaderName)
+        {
+            try
+            {
+            
+                string accessToken = await GetAccessTokenAsync();
+
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(HeaderName, _configuration["EmailSettings:AdminMail"]));
+                message.To.Add(new MailboxAddress("", EmailId));
+                message.Subject = Subject;
+
+                var bodyBuilder = new BodyBuilder { HtmlBody = Body };
+                message.Body = bodyBuilder.ToMessageBody();
+
+                using var client = new MailKit.Net.Smtp.SmtpClient();
+                await client.ConnectAsync(_configuration["EmailSettings:SMTP_Host"], Convert.ToInt32(_configuration["EmailSettings:SMTP_Port"]), SecureSocketOptions.StartTls);
+                await client.AuthenticateAsync(new SaslMechanismOAuth2(_configuration["EmailSettings:Username"], accessToken));
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log error
+                return false;
+            }
+        }
+
+        //using var client = new HttpClient();
+        //var request = new HttpRequestMessage(HttpMethod.Post, _emailSettings.OAuth.TokenUrl);
+        //request.Content = new FormUrlEncodedContent(new[]
+        //{
+        //new KeyValuePair<string, string>("client_id", _emailSettings.OAuth.ClientId),
+        //new KeyValuePair<string, string>("client_secret", _emailSettings.OAuth.ClientSecret),
+        //new KeyValuePair<string, string>("grant_type", "client_credentials"),
+        //new KeyValuePair<string, string>("scope", "https://mail.google.com/") // Change based on provider
+        private async Task<string> GetAccessTokenAsync()
+        {
+            var emailSettings = _configuration.GetSection("EmailSettings").Get<EmailSettings>();
+
+            using var client = new HttpClient();
+            var request = new HttpRequestMessage(HttpMethod.Post, emailSettings?.OAuth?.TokenUrl);
+            request.Content = new FormUrlEncodedContent(new[]
+            {
+            new KeyValuePair<string, string>("client_id", emailSettings.OAuth.ClientId),
+            new KeyValuePair<string, string>("client_secret", emailSettings.OAuth.ClientSecret),
+           new KeyValuePair<string, string>("refresh_token", emailSettings.OAuth.RefreshToken), // Use stored refresh token
+        new KeyValuePair<string, string>("grant_type", "refresh_token")
+  
+
+        });
+
+            var response = await client.SendAsync(request);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            using var jsonDoc = JsonDocument.Parse(responseBody);
+            return jsonDoc.RootElement.GetProperty("access_token").GetString();
+        }
+        public async Task<bool> SendEmailAsync1(string EmailId, string User, string Subject, string Body, string Headeraname)
         {
 
             SmtpClient client = new SmtpClient();

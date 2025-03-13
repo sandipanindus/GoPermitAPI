@@ -3,6 +3,7 @@ using LabelPad.Domain.Data;
 using LabelPad.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -489,7 +490,15 @@ namespace LabelPad.Repository.TenantManagement
         public async Task<dynamic> AddVehicles(List<AddVehicleRegistrationAc> objinput)
         {
             bool iscancelwhitelist = false;
-            UserManagement.UserRepository usrepo = new UserManagement.UserRepository(_dbContext, _configuration);
+            // Get EmailSettings from Configuration
+            EmailSettings emailSettings = _configuration.GetSection("EmailSettings").Get<EmailSettings>();
+
+            // Wrap it inside Options.Create to match IOptions<T>
+            IOptions<EmailSettings> optionsEmailSettings = Options.Create(emailSettings);
+
+            // Pass it correctly to the UserRepository constructor
+            UserManagement.UserRepository usrepo = new UserManagement.UserRepository(_dbContext, _configuration, optionsEmailSettings);
+
             var Reguserssiteid = _dbContext.RegisterUsers.Where(x => x.Id == objinput[0].TenantId && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().SiteId;
 
            
