@@ -894,9 +894,11 @@ namespace LabelPad.Repository.TenantManagement
                     continue;
                 }
 
+                var requestIds = objinput.Select(x => x.Id).ToList();
+
                 var conflictingRecords = await _dbContext.VehicleRegistrations
                     .AnyAsync(v => v.ParkingBayNo == bayno
-                                && v.Id != input.Id
+                                && !requestIds.Contains(v.Id)
                                 && v.IsActive
                                 && newStartDate < v.EndDate   // Overlaps start
                                 && newEndDate > v.StartDate); // Overlaps end
@@ -989,6 +991,9 @@ namespace LabelPad.Repository.TenantManagement
                 .Where(x => existingVehicleIds.Contains(x.VehicleRegistrationId))
                 .ToList();
 
+          
+
+
             foreach (var input in objinput)
             {
                 int bayno = Convert.ToInt32(input.bayno);
@@ -997,20 +1002,54 @@ namespace LabelPad.Repository.TenantManagement
 
                 // Strict Overlap Check
                 var hasOverlap = _dbContext.VehicleRegistrations
-                    .Any(v => v.ParkingBayNo == bayno &&
-                              v.IsActive &&
-                              !v.IsDeleted &&
-                              (
-                                  (newStartDate >= v.StartDate && newStartDate < v.EndDate) ||  // Starts inside existing range
-                                  (newEndDate > v.StartDate && newEndDate <= v.EndDate) ||      // Ends inside existing range
-                                  (newStartDate <= v.StartDate && newEndDate >= v.EndDate)      // Covers the entire existing range
-                              ));
+                 .Any(v => v.ParkingBayNo == bayno &&
+                  v.IsActive &&
+                 !v.IsDeleted &&
+              (
+                  ((v.StartDate.HasValue && v.StartDate.Value.TimeOfDay != TimeSpan.Zero) ||
+                   (v.EndDate.HasValue && v.EndDate.Value.TimeOfDay != TimeSpan.Zero)) && // Only check records with time
+                  (
+                      (newStartDate >= v.StartDate && newStartDate < v.EndDate) ||  // Starts inside existing range
+                      (newEndDate > v.StartDate && newEndDate <= v.EndDate) ||      // Ends inside existing range
+                      (newStartDate <= v.StartDate && newEndDate >= v.EndDate)      // Covers the entire existing range
+                  )
+              ));
 
                 if (hasOverlap)
                 {
                     return new AddVehicleResponse { Message = "Range Already Exist" };
                 }
+                else
+                {
+                    int SelBayno = Convert.ToInt32(objinput[0].bayno);
+                    var resp = _dbContext.VehicleRegistrations
+              .Where(v => v.ParkingBayNo == SelBayno)
+              .ToList();
+
+                    if (resp.Any())
+                    {
+                        foreach (var slot in resp)
+                        {
+                            // Check if both StartDate and EndDate exist and have time as 00:00
+                            bool isMidnight = slot.StartDate.HasValue && slot.StartDate.Value.TimeOfDay == TimeSpan.Zero &&
+                                              slot.EndDate.HasValue && slot.EndDate.Value.TimeOfDay == TimeSpan.Zero;
+
+                            if (slot.IsActive && !slot.IsDeleted && isMidnight)
+                            {
+                                slot.IsDeleted = true;
+                                slot.IsActive = false;
+                                slot.UpdatedOn = DateTime.Now;
+                            }
+                        }
+
+                        _dbContext.VehicleRegistrations.UpdateRange(resp);
+                        await _dbContext.SaveChangesAsync();
+                    }
+                }
+
             }
+
+
 
             foreach (var input in objinput)
             {
@@ -1035,6 +1074,8 @@ namespace LabelPad.Repository.TenantManagement
                     _dbContext.ParkingBayNos.Update(parkingBay);
                     await _dbContext.SaveChangesAsync();
                 }
+
+               
 
                 var newVehicle = new VehicleRegistration
                 {
@@ -1074,16 +1115,16 @@ namespace LabelPad.Repository.TenantManagement
 
                 }
 
-                if (input.dates != "")
-                {
-                    savemutliplevehciledates(newVehicle.Id, input.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
-                }
-                else
-                {
-                    //savemutliplevehciledates(newVehicle.Id, input.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
+                //if (DateTime.TryParse(input.dates, out DateTime parsedDate))
+                //{
+                 savemutliplevehciledates(newVehicle.Id, input.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
+                //}
+                //else
+                //{
+                //   // savemutliplevehciledates(newVehicle.Id, input.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
 
-                    savemutliplevehciletime(newVehicle.Id, newVehicle.StartDate, newVehicle.EndDate, 0);
-                }
+                //    savemutliplevehciletime(newVehicle.Id, newVehicle.StartDate, newVehicle.EndDate, 0);
+                //}
             }
 
             return new AddVehicleResponse { Message = "Vehicles updated and new records inserted successfully" };

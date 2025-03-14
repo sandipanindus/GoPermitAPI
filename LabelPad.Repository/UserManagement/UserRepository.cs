@@ -670,7 +670,7 @@ namespace LabelPad.Repository.UserManagement
                                         vr.VRM = addUser.BayConfigs[i].vehiclereg;
                                         vr.CreatedOn = DateTime.Now;
                                         vr.CreatedBy = 1;
-                                         vr.IsSaveCount = 1;
+                                        vr.IsSaveCount = 1;
                                          vr.StartDate = Convert.ToDateTime(startdate1);
                                         vr.EndDate = Convert.ToDateTime(enddate1);
                                         vr.ParkingBayNo = isParking.Id;
@@ -748,12 +748,13 @@ namespace LabelPad.Repository.UserManagement
                                     if (addUser.BayConfigs[i].vehiclereg != "")
                                     {
                                         vr = new VehicleRegistration();
-
+                                        
                                         vr.IsActive = true;
                                         vr.IsDeleted = false;
                                         vr.RegisterUserId = isParking.RegisterUserId;
                                         vr.VRM = addUser.BayConfigs[i].vehiclereg;
                                         vr.CreatedOn = DateTime.Now;
+                                        vr.IsSaveCount = 1;
                                         vr.CreatedBy = 1;
                                         vr.StartDate = Convert.ToDateTime(startdate1);
                                         vr.EndDate = Convert.ToDateTime(enddate1);
