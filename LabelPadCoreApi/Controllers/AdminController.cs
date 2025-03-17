@@ -33,6 +33,7 @@ using Microsoft.CodeAnalysis.Editing;
 using LabelPad.Repository.IndustryManagement;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using Azure.Core;
+using Microsoft.Extensions.Logging;
 
 namespace LabelPadCoreApi.Controllers
 {
@@ -55,10 +56,11 @@ namespace LabelPadCoreApi.Controllers
         private readonly IReportRepository _reportRepository;
         private readonly ITenantRepository _tenantRepository;
         private readonly IIndustryRepository _industryRepository;
+        private readonly ILogger<AdminController> _logger;
         public AdminController(ITenantRepository tenantRepository, IReportRepository reportRepository, IVisitorParkingRepository visitorParkingRepository, ISiteRepository siteRepository,
         IVehicleRegistrationRepository vehicleRegistrationRepository,
             IPermissionRepository permissionRepository, IRoleRepository roleRepository, IUserRepository userRepository,
-        IRegisterRepository registerRepository, LabelPadDbContext dbContext, IConfiguration configuration, IIndustryRepository industryRepository)
+        IRegisterRepository registerRepository, LabelPadDbContext dbContext, IConfiguration configuration, IIndustryRepository industryRepository, ILogger<AdminController> logger)
         {
             _registerRepository = registerRepository;
             _dbContext = dbContext;
@@ -72,6 +74,7 @@ namespace LabelPadCoreApi.Controllers
             _tenantRepository = tenantRepository;
             _permissionRepository = permissionRepository;
             _industryRepository = industryRepository;
+            _logger = logger;
         }
 
         #region GetSupportList
@@ -82,18 +85,28 @@ namespace LabelPadCoreApi.Controllers
         [HttpGet("GetSupportList")]
         public async Task<IActionResult> GetSupportList()
         {
+            AppLogs.InfoLogs("GetSupportList Method was started, Controller: Admin");
+            _logger.LogInformation("GetSupportList method started.");
+
             try
             {
-                //AppLogs.InfoLogs("DeleteRole Method was started,Controller:Admin");
                 var result = await _reportRepository.GetSupportList();
+
+                AppLogs.InfoLogs("GetSupportList method executed successfully, Controller: Admin");
+                _logger.LogInformation("GetSupportList method completed successfully.");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the DeleteRole Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                AppLogs.LogError($"Error occurred in GetSupportList Method, Controller: Admin - {ex}");
+                _logger.LogError($"Error occurred in GetSupportList method: {ex}");
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.Message, Result = null });
             }
         }
+
+
         #endregion
 
         #region GetSearchUser
@@ -104,18 +117,28 @@ namespace LabelPadCoreApi.Controllers
         [HttpGet("GetSearchUser")]
         public async Task<IActionResult> GetSearchUser(int PageNo, int PageSize, string FirstName, string LastName, string Email, string SiteName, int LoginId, int RoleId, int SiteId)
         {
+            AppLogs.InfoLogs("GetSearchUser Method was started, Controller: Admin");
+            _logger.LogInformation("GetSearchUser method started with parameters: PageNo={PageNo}, PageSize={PageSize}, FirstName={FirstName}, LastName={LastName}, Email={Email}, SiteName={SiteName}, LoginId={LoginId}, RoleId={RoleId}, SiteId={SiteId}",
+                PageNo, PageSize, FirstName, LastName, Email, SiteName, LoginId, RoleId, SiteId);
+
             try
             {
-                //AppLogs.InfoLogs("DeleteRole Method was started,Controller:Admin");
                 var result = await _userRepository.GetSearchUsers(PageNo, PageSize, FirstName, LastName, Email, SiteName, LoginId, RoleId, SiteId);
+
+                AppLogs.InfoLogs("GetSearchUser method executed successfully, Controller: Admin");
+                _logger.LogInformation("GetSearchUser method completed successfully.");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the DeleteRole Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                AppLogs.LogError($"Error occurred in GetSearchUser Method, Controller: Admin - {ex}");
+                _logger.LogError(ex, "Error occurred in GetSearchUser method");
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.Message, Result = null });
             }
         }
+
         #endregion
 
         #region GetSearchTenant
@@ -126,18 +149,28 @@ namespace LabelPadCoreApi.Controllers
         [HttpGet("GetSearchTenant")]
         public async Task<IActionResult> GetSearchTenant(int PageNo, int PageSize, string FirstName, string LastName, string Email, string MobileNumber, string SiteName, int SiteId, string VRM)
         {
+            AppLogs.InfoLogs("GetSearchTenant Method was started, Controller: Admin");
+            _logger.LogInformation("GetSearchTenant method started with parameters: PageNo={PageNo}, PageSize={PageSize}, FirstName={FirstName}, LastName={LastName}, Email={Email}, MobileNumber={MobileNumber}, SiteName={SiteName}, SiteId={SiteId}, VRM={VRM}",
+                PageNo, PageSize, FirstName, LastName, Email, MobileNumber, SiteName, SiteId, VRM);
+
             try
             {
-                //AppLogs.InfoLogs("DeleteRole Method was started,Controller:Admin");
                 var result = await _userRepository.GetSearchTenants(PageNo, PageSize, FirstName, LastName, Email, MobileNumber, SiteName, SiteId, VRM);
+
+                AppLogs.InfoLogs("GetSearchTenant method executed successfully, Controller: Admin");
+                _logger.LogInformation("GetSearchTenant method completed successfully.");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the DeleteRole Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                AppLogs.LogError($"Error occurred in GetSearchTenant Method, Controller: Admin - {ex}");
+                _logger.LogError(ex, "Error occurred in GetSearchTenant method");
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.Message, Result = null });
             }
         }
+
         #endregion
 
         #region GetSearchSite
@@ -148,18 +181,28 @@ namespace LabelPadCoreApi.Controllers
         [HttpGet("GetSearchSite")]
         public async Task<IActionResult> GetSearchSite(int PageNo, int PageSize, string SiteName, string Email, string MobileNumber, int SiteId)
         {
+            AppLogs.InfoLogs("GetSearchSite Method was started, Controller: Admin");
+            _logger.LogInformation("GetSearchSite method started with parameters: PageNo={PageNo}, PageSize={PageSize}, SiteName={SiteName}, Email={Email}, MobileNumber={MobileNumber}, SiteId={SiteId}",
+                PageNo, PageSize, SiteName, Email, MobileNumber, SiteId);
+
             try
             {
-                //AppLogs.InfoLogs("DeleteRole Method was started,Controller:Admin");
                 var result = await _siteRepository.GetSearchSites(PageNo, PageSize, SiteName, Email, MobileNumber, SiteId);
+
+                AppLogs.InfoLogs("GetSearchSite method executed successfully, Controller: Admin");
+                _logger.LogInformation("GetSearchSite method completed successfully.");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the DeleteRole Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                AppLogs.LogError($"Error occurred in GetSearchSite Method, Controller: Admin - {ex}");
+                _logger.LogError(ex, "Error occurred in GetSearchSite method");
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.Message, Result = null });
             }
         }
+
         #endregion
 
         #region GetSearchZatpark
@@ -170,18 +213,28 @@ namespace LabelPadCoreApi.Controllers
         [HttpGet("GetSearchZatpark")]
         public async Task<IActionResult> GetSearchZatpark(int PageNo, int PageSize, string Tenant, string Sitename, string BayNo, string Fromdate, string Todate, int SiteId)
         {
+            AppLogs.InfoLogs("GetSearchZatpark Method was started, Controller: Admin");
+            _logger.LogInformation("GetSearchZatpark method started with parameters: PageNo={PageNo}, PageSize={PageSize}, Tenant={Tenant}, Sitename={Sitename}, BayNo={BayNo}, Fromdate={Fromdate}, Todate={Todate}, SiteId={SiteId}",
+                PageNo, PageSize, Tenant, Sitename, BayNo, Fromdate, Todate, SiteId);
+
             try
             {
-                //AppLogs.InfoLogs("DeleteRole Method was started,Controller:Admin");
                 var result = await _siteRepository.GetSearchZatpark(PageNo, PageSize, Tenant, Sitename, BayNo, Fromdate, Todate, SiteId);
+
+                AppLogs.InfoLogs("GetSearchZatpark method executed successfully, Controller: Admin");
+                _logger.LogInformation("GetSearchZatpark method completed successfully.");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the DeleteRole Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                AppLogs.LogError($"Error occurred in GetSearchZatpark Method, Controller: Admin - {ex}");
+                _logger.LogError(ex, "Error occurred in GetSearchZatpark method");
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.Message, Result = null });
             }
         }
+
         #endregion
 
         #region GetSearchAuditReport
@@ -192,18 +245,28 @@ namespace LabelPadCoreApi.Controllers
         [HttpGet("GetSearchAuditReport")]
         public async Task<IActionResult> GetSearchAuditReport(int PageNo, int PageSize, string Username, string Sitename, string Fromdate, string Todate, int SiteId)
         {
+            AppLogs.InfoLogs("GetSearchAuditReport Method was started, Controller: Admin");
+            _logger.LogInformation("GetSearchAuditReport method started with parameters: PageNo={PageNo}, PageSize={PageSize}, Username={Username}, Sitename={Sitename}, Fromdate={Fromdate}, Todate={Todate}, SiteId={SiteId}",
+                PageNo, PageSize, Username, Sitename, Fromdate, Todate, SiteId);
+
             try
             {
-                //AppLogs.InfoLogs("DeleteRole Method was started,Controller:Admin");
                 var result = await _siteRepository.GetSearchAuditReport(PageNo, PageSize, Username, Sitename, Fromdate, Todate, SiteId);
+
+                AppLogs.InfoLogs("GetSearchAuditReport method executed successfully, Controller: Admin");
+                _logger.LogInformation("GetSearchAuditReport method completed successfully.");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the DeleteRole Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                AppLogs.LogError($"Error occurred in GetSearchAuditReport Method, Controller: Admin - {ex}");
+                _logger.LogError(ex, "Error occurred in GetSearchAuditReport method");
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.Message, Result = null });
             }
         }
+
         #endregion
 
         #region GetVisitorSlot
@@ -214,26 +277,44 @@ namespace LabelPadCoreApi.Controllers
         [HttpGet("GetVisitorSlot")]
         public async Task<IActionResult> GetVisitorSlot(string Id)
         {
+            AppLogs.InfoLogs($"GetVisitorSlot Method was started, Controller: Admin with Id={Id}");
+            _logger.LogInformation("GetVisitorSlot method started with Id={Id}", Id);
+
             try
             {
-                //AppLogs.InfoLogs("DeleteRole Method was started,Controller:Admin");
-                var result = await _visitorParkingRepository.GetVisitorSlot(Convert.ToInt32(Id));
+                var visitorId = Convert.ToInt32(Id);
+                var result = await _visitorParkingRepository.GetVisitorSlot(visitorId);
+
                 if (result == null)
                 {
-                    var visitorparktemp = _dbContext.VisitorParkingTemps.Where(x => x.Id == Convert.ToInt32(Id) && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                    _logger.LogWarning("No visitor slot found for Id={Id}, checking VisitorParkingTemps table.", Id);
+                    var visitorparktemp = _dbContext.VisitorParkingTemps
+                        .Where(x => x.Id == visitorId && x.IsActive == true && x.IsDeleted == false)
+                        .FirstOrDefault();
+
+                    if (visitorparktemp == null)
+                    {
+                        AppLogs.InfoLogs($"No active visitor slot found for Id={Id}, Controller: Admin");
+                        return Ok(new ApiServiceResponse() { Status = "-100", Message = "No active visitor slot found", Result = null });
+                    }
+
                     return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = visitorparktemp });
                 }
-                else
-                {
-                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
-                }
+
+                AppLogs.InfoLogs($"GetVisitorSlot method executed successfully for Id={Id}, Controller: Admin");
+                _logger.LogInformation("GetVisitorSlot method completed successfully.");
+
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the DeleteRole Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                AppLogs.LogError($"Error occurred in GetVisitorSlot Method, Controller: Admin - {ex}");
+                _logger.LogError(ex, "Error occurred in GetVisitorSlot method for Id={Id}", Id);
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.Message, Result = null });
             }
         }
+
         #endregion
 
 
@@ -246,18 +327,34 @@ namespace LabelPadCoreApi.Controllers
         [HttpPost("UpdateVisitorSlot")]
         public async Task<IActionResult> UpdateVisitorSlot([FromBody] UpdateVisitorSlot objdata)
         {
+            AppLogs.InfoLogs("UpdateVisitorSlot Method was started, Controller: Admin");
+            _logger.LogInformation("UpdateVisitorSlot method started with data: {@objdata}", objdata);
+
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
                 var visitors = await _visitorParkingRepository.UpdateVisitorSlot(objdata);
+
+                if (visitors == null)
+                {
+                    AppLogs.InfoLogs("UpdateVisitorSlot returned null, Controller: Admin");
+                    _logger.LogWarning("UpdateVisitorSlot method returned null for input: {@objdata}", objdata);
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Update failed", Result = null });
+                }
+
+                AppLogs.InfoLogs("UpdateVisitorSlot method executed successfully, Controller: Admin");
+                _logger.LogInformation("UpdateVisitorSlot method completed successfully.");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                AppLogs.LogError($"Error occurred in UpdateVisitorSlot Method, Controller: Admin - {ex}");
+                _logger.LogError(ex, "Error occurred in UpdateVisitorSlot method with data: {@objdata}", objdata);
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.Message, Result = null });
             }
         }
+
         #endregion
 
 
@@ -272,17 +369,15 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("AddSite Method was started,Controller:Admin");
-                //if (_visitorParkingRepository.GetExistsVehicleParking(objdata))
-                //{
-                //    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Already Exists with that email or mobile number", Result = objdata });
-                //}
-                //else
-                //{
+                
+                _logger.LogInformation("AddVisitor method started.");
+                AppLogs.InfoLogs("AddVisitor method started, Controller: Admin");
+
                 var result = await _visitorParkingRepository.AddVisitorParking(objdata);
                 if (result != null)
                 {
-
+                    _logger.LogInformation("Visitor parking record added successfully.");
+                    AppLogs.InfoLogs("Visitor parking record added successfully.");
                     var folderName = Path.Combine("EmailHtml", "VisitorParking.html");
                     var filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
                     string bayid = "";
@@ -360,19 +455,23 @@ namespace LabelPadCoreApi.Controllers
 
                     }
 
+                    _logger.LogInformation("Visitor confirmation email sent successfully.");
+                    AppLogs.InfoLogs("Visitor confirmation email sent successfully.");
 
 
                     return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = objdata });
                 }
                 else
                 {
+                    _logger.LogWarning("Failed to add visitor parking record.");
+                    AppLogs.LogWarning("Failed to add visitor parking record.");
                     return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = objdata });
                 }
-                // }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the AddSite Method,Controller:Admin" + ex.ToString());
+                _logger.LogError($"Error occurred in AddVisitor method: {ex}");
+                AppLogs.LogError("Error occurred in AddVisitor method, Controller: Admin" + ex.ToString());
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
             }
         }
@@ -390,16 +489,35 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                _logger.LogInformation("UpdateVisitorParking method started.");
+                AppLogs.InfoLogs("UpdateVisitorParking method started, Controller: Admin");
+
                 var visitors = await _visitorParkingRepository.UpdateVisitorParking(objdata);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+
+                if (visitors != null)
+                {
+                    _logger.LogInformation("Visitor parking record updated successfully.");
+                    AppLogs.InfoLogs("Visitor parking record updated successfully.");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to update visitor parking record.");
+                    AppLogs.LogWarning("Failed to update visitor parking record.");
+
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = visitors });
+                }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                _logger.LogError($"Error occurred in UpdateVisitorParking method: {ex}");
+                AppLogs.LogError("Error occurred in UpdateVisitorParking method, Controller: Admin" + ex.ToString());
+
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
             }
         }
+
         #endregion
 
         #region GetVisitorParkingById
@@ -413,16 +531,35 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                _logger.LogInformation($"GetVisitorParkingById method started. ID: {Id}");
+                AppLogs.InfoLogs($"GetVisitorParkingById method started, Controller: Admin, ID: {Id}");
+
                 var visitors = await _visitorParkingRepository.GetVisitorParkingById(Id);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+
+                if (visitors != null)
+                {
+                    _logger.LogInformation("Visitor parking record retrieved successfully.");
+                    AppLogs.InfoLogs("Visitor parking record retrieved successfully.");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+                }
+                else
+                {
+                    _logger.LogWarning($"No visitor parking record found for ID: {Id}");
+                    AppLogs.LogWarning($"No visitor parking record found for ID: {Id}");
+
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "No record found", Result = null });
+                }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                _logger.LogError($"Error occurred in GetVisitorParkingById method. ID: {Id}, Error: {ex}");
+                AppLogs.LogError($"Error occurred in GetVisitorParkingById method, Controller: Admin, ID: {Id}, Error: {ex}");
+
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
             }
         }
+
 
         #endregion
 
@@ -437,16 +574,35 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                _logger.LogInformation($"GetVisitorParkingBysiteId method started. Site ID: {Id}");
+                AppLogs.InfoLogs($"GetVisitorParkingBysiteId method started, Controller: Admin, Site ID: {Id}");
+
                 var visitors = await _visitorParkingRepository.GetVisitorParkingBysiteId(Id);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+
+                if (visitors != null)
+                {
+                    _logger.LogInformation("Visitor parking records retrieved successfully.");
+                    AppLogs.InfoLogs("Visitor parking records retrieved successfully.");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+                }
+                else
+                {
+                    _logger.LogWarning($"No visitor parking records found for Site ID: {Id}");
+                    AppLogs.LogWarning($"No visitor parking records found for Site ID: {Id}");
+
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "No records found", Result = null });
+                }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                _logger.LogError($"Error occurred in GetVisitorParkingBysiteId method. Site ID: {Id}, Error: {ex}");
+                AppLogs.LogError($"Error occurred in GetVisitorParkingBysiteId method, Controller: Admin, Site ID: {Id}, Error: {ex}");
+
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
             }
         }
+
         #endregion
 
         #region GetVisitordetailsById
@@ -460,16 +616,35 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
-                var visitors = await _visitorParkingRepository.GetVisitordetailsById(Id);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+                _logger.LogInformation($"GetVisitordetailsById method started. Visitor ID: {Id}");
+                AppLogs.InfoLogs($"GetVisitordetailsById method started, Controller: Admin, Visitor ID: {Id}");
+
+                var visitorDetails = await _visitorParkingRepository.GetVisitordetailsById(Id);
+
+                if (visitorDetails != null)
+                {
+                    _logger.LogInformation($"Visitor details retrieved successfully for Visitor ID: {Id}");
+                    AppLogs.InfoLogs($"Visitor details retrieved successfully for Visitor ID: {Id}");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitorDetails });
+                }
+                else
+                {
+                    _logger.LogWarning($"No visitor details found for Visitor ID: {Id}");
+                    AppLogs.LogWarning($"No visitor details found for Visitor ID: {Id}");
+
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "No records found", Result = null });
+                }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                _logger.LogError($"Error occurred in GetVisitordetailsById method. Visitor ID: {Id}, Error: {ex}");
+                AppLogs.LogError($"Error occurred in GetVisitordetailsById method, Controller: Admin, Visitor ID: {Id}, Error: {ex}");
+
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
             }
         }
+
         #endregion
 
         #region GetVisitorParkingBysiteIdanddate
@@ -484,16 +659,35 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                _logger.LogInformation($"GetVisitorParkingBysiteIddate method started. Site ID: {Id}, Date: {date}");
+                AppLogs.InfoLogs($"GetVisitorParkingBysiteIddate method started, Controller: Admin, Site ID: {Id}, Date: {date}");
+
                 var visitors = await _visitorParkingRepository.GetVisitorParkingBysiteIddate(Id, date);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+
+                if (visitors != null && visitors.Any())
+                {
+                    _logger.LogInformation($"Visitor parking details retrieved successfully for Site ID: {Id} on Date: {date}");
+                    AppLogs.InfoLogs($"Visitor parking details retrieved successfully for Site ID: {Id} on Date: {date}");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+                }
+                else
+                {
+                    _logger.LogWarning($"No visitor parking records found for Site ID: {Id} on Date: {date}");
+                    AppLogs.LogWarning($"No visitor parking records found for Site ID: {Id} on Date: {date}");
+
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "No records found", Result = null });
+                }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                _logger.LogError($"Error occurred in GetVisitorParkingBysiteIddate method. Site ID: {Id}, Date: {date}, Error: {ex}");
+                AppLogs.LogError($"Error occurred in GetVisitorParkingBysiteIddate method, Controller: Admin, Site ID: {Id}, Date: {date}, Error: {ex}");
+
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
             }
         }
+
         #endregion
 
         #region GetVisitorBayNoTime
@@ -508,16 +702,35 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                _logger.LogInformation($"GetVisitorBayNoTime method started. Site ID: {siteid}, Start Time: {starttime}, Date: {date}");
+                AppLogs.InfoLogs($"GetVisitorBayNoTime method started, Controller: Admin, Site ID: {siteid}, Start Time: {starttime}, Date: {date}");
+
                 var visitors = await _siteRepository.GetVisitorBayNo(starttime, siteid, date);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+
+                if (visitors != null && visitors.Any())
+                {
+                    _logger.LogInformation($"Visitor bay number details retrieved successfully for Site ID: {siteid}, Start Time: {starttime}, Date: {date}");
+                    AppLogs.InfoLogs($"Visitor bay number details retrieved successfully for Site ID: {siteid}, Start Time: {starttime}, Date: {date}");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
+                }
+                else
+                {
+                    _logger.LogWarning($"No visitor bay number records found for Site ID: {siteid}, Start Time: {starttime}, Date: {date}");
+                    AppLogs.LogWarning($"No visitor bay number records found for Site ID: {siteid}, Start Time: {starttime}, Date: {date}");
+
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "No records found", Result = null });
+                }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError($"Error occurred in GetVisitorBayNoTime method. Site ID: {siteid}, Start Time: {starttime}, Date: {date}, Error: {ex}");
+                AppLogs.LogError($"Error occurred in GetVisitorBayNoTime method, Controller: Admin, Site ID: {siteid}, Start Time: {starttime}, Date: {date}, Error: {ex}");
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = "An error occurred while fetching visitor bay details", Result = null });
             }
         }
+
         #endregion
 
         #region GetVisitorBayNoEdit
@@ -532,16 +745,27 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                _logger.LogInformation($"GetVisitorBayNoEdit method started. Site ID: {SiteId}, User ID: {UserId}");
+                AppLogs.InfoLogs($"GetVisitorBayNoEdit method started, Controller: Admin, Site ID: {SiteId}, User ID: {UserId}");
+
                 var visitorbaynos = await _visitorParkingRepository.GetVisitorBayNosEdit(SiteId, UserId);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitorbaynos });
+
+                
+                    _logger.LogInformation($"Visitor bay numbers retrieved successfully for Site ID: {SiteId}, User ID: {UserId}");
+                    AppLogs.InfoLogs($"Visitor bay numbers retrieved successfully for Site ID: {SiteId}, User ID: {UserId}");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitorbaynos });
+               
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError($"Error occurred in GetVisitorBayNoEdit method. Site ID: {SiteId}, User ID: {UserId}, Error: {ex}");
+                AppLogs.LogError($"Error occurred in GetVisitorBayNoEdit method, Controller: Admin, Site ID: {SiteId}, User ID: {UserId}, Error: {ex}");
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = "An error occurred while fetching visitor bay numbers", Result = null });
             }
         }
+
         #endregion
 
         #region GetVisitorBayNo
@@ -555,16 +779,25 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                _logger.LogInformation($"GetVisitorBayNo method started. Site ID: {SiteId}");
+                AppLogs.InfoLogs($"GetVisitorBayNo method started, Controller: Admin, Site ID: {SiteId}");
+
                 var visitorbaynos = await _visitorParkingRepository.GetVisitorBayNos(SiteId);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitorbaynos });
+                _logger.LogInformation($"Visitor bay numbers retrieved successfully for Site ID: {SiteId}");
+                    AppLogs.InfoLogs($"Visitor bay numbers retrieved successfully for Site ID: {SiteId}");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitorbaynos });
+               
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError($"Error occurred in GetVisitorBayNo method. Site ID: {SiteId}, Error: {ex}");
+                AppLogs.LogError($"Error occurred in GetVisitorBayNo method, Controller: Admin, Site ID: {SiteId}, Error: {ex}");
+
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = "An error occurred while fetching visitor bay numbers", Result = null });
             }
         }
+
         #endregion
 
         #region GetParkingBayNo
@@ -578,16 +811,23 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                _logger.LogInformation($"GetParkingBayNo started | SiteId: {SiteId}, Date: {Date}, EndDate: {EndDate}");
+                AppLogs.InfoLogs($"GetParkingBayNo started | SiteId: {SiteId}, Date: {Date}, EndDate: {EndDate}");
+
                 var parkingbaynos = await _siteRepository.GetParkingBayNos(SiteId, Date, EndDate);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = parkingbaynos });
+
+                _logger.LogInformation($"Successfully retrieved {parkingbaynos.Count()} parking bays | SiteId: {SiteId}");
+                return Ok(new ApiServiceResponse { Status = "200", Message = "Success", Result = parkingbaynos });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError($"Error in GetParkingBayNo | SiteId: {SiteId}, Date: {Date}, EndDate: {EndDate} | Exception: {ex}");
+                AppLogs.LogError($"Error in GetParkingBayNo | SiteId: {SiteId}, Date: {Date}, EndDate: {EndDate} | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse { Status = "500", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region GetParkingBayNobysiteid
@@ -601,16 +841,25 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                _logger.LogInformation($"GetParkingBayNobysiteid started | SiteId: {SiteId}");
+                AppLogs.InfoLogs($"GetParkingBayNobysiteid started | SiteId: {SiteId}");
+
                 var parkingbaynos = await _siteRepository.GetParkingBayNobysiteid(SiteId);
+
+                _logger.LogInformation($"Successfully retrieved parking bay numbers | SiteId: {SiteId}");
+                AppLogs.InfoLogs($"Successfully retrieved parking bay numbers | SiteId: {SiteId}");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = parkingbaynos });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                _logger.LogError($"Error in GetParkingBayNobysiteid | SiteId: {SiteId} | Exception: {ex}");
+                AppLogs.LogError($"Error in GetParkingBayNobysiteid | SiteId: {SiteId} | Exception: {ex}");
+
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
             }
         }
+
         #endregion
 
         #region GetParkingBayNoEdit
@@ -625,16 +874,33 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                _logger.LogInformation($"GetParkingBayNoEdit started | SiteId: {SiteId}, UserId: {UserId}");
+                AppLogs.InfoLogs($"GetParkingBayNoEdit started | SiteId: {SiteId}, UserId: {UserId}");
+
                 var parkingbaynos = await _siteRepository.GetParkingBayNosEdit(SiteId, UserId);
+
+                if (parkingbaynos == null || !parkingbaynos.Any())
+                {
+                    _logger.LogWarning($"No parking bays found for edit | SiteId: {SiteId}, UserId: {UserId}");
+                    AppLogs.LogWarning($"No parking bays found for edit | SiteId: {SiteId}, UserId: {UserId}");
+
+                    return Ok(new ApiServiceResponse() { Status = "404", Message = "No parking bay numbers found", Result = null });
+                }
+
+                _logger.LogInformation($"Successfully retrieved parking bay numbers for edit | SiteId: {SiteId}, UserId: {UserId}");
+                AppLogs.InfoLogs($"Successfully retrieved parking bay numbers for edit | SiteId: {SiteId}, UserId: {UserId}");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = parkingbaynos });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError($"Error in GetParkingBayNoEdit | SiteId: {SiteId}, UserId: {UserId} | Exception: {ex}");
+                AppLogs.LogError($"Error in GetParkingBayNoEdit | SiteId: {SiteId}, UserId: {UserId} | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse() { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region GetVisitorParkings
@@ -648,16 +914,33 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
+                _logger.LogInformation($"GetVisitorParkings started | TenantId: {TenantId}");
+                AppLogs.InfoLogs($"GetVisitorParkings started | TenantId: {TenantId}");
+
                 var visitors = await _visitorParkingRepository.GetVisitorParkings(TenantId);
+
+                if (visitors == null || !visitors.Any())
+                {
+                    _logger.LogWarning($"No visitor parking records found | TenantId: {TenantId}");
+                    AppLogs.LogWarning($"No visitor parking records found | TenantId: {TenantId}");
+
+                    return Ok(new ApiServiceResponse() { Status = "404", Message = "No visitor parking records found", Result = null });
+                }
+
+                _logger.LogInformation($"Successfully retrieved visitor parking records | TenantId: {TenantId}");
+                AppLogs.InfoLogs($"Successfully retrieved visitor parking records | TenantId: {TenantId}");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError($"Error in GetVisitorParkings | TenantId: {TenantId} | Exception: {ex}");
+                AppLogs.LogError($"Error in GetVisitorParkings | TenantId: {TenantId} | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse() { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region GetTimeSlots
@@ -670,20 +953,27 @@ namespace LabelPadCoreApi.Controllers
         /// <param name="siteid"></param>
         /// <returns></returns>
         [HttpGet("GetTimeSlots")]
-        public async Task<IActionResult> GetTimeSlots(string duration, string sessionunit, DateTime date, string siteid)
+        public async Task<IActionResult> GetTimeSlots([FromQuery] string duration, [FromQuery] string sessionUnit, [FromQuery] DateTime date, [FromQuery] string siteId)
         {
             try
             {
-                //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
-                var sessions = await _siteRepository.BindTimeSlots(duration, sessionunit, date, siteid);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = sessions });
+                _logger.LogInformation("GetTimeSlots started | Duration: {duration}, SessionUnit: {sessionUnit}, Date: {date}, SiteId: {siteId}", duration, sessionUnit, date, siteId);
+                AppLogs.InfoLogs($"GetTimeSlots started | Duration: {duration}, SessionUnit: {sessionUnit}, Date: {date}, SiteId: {siteId}");
+
+                var timeSlots = await _siteRepository.BindTimeSlots(duration, sessionUnit, date, siteId);
+                AppLogs.InfoLogs($"GetTimeSlots successful | Found {timeSlots.Count()} time slots");
+
+                return Ok(new ApiServiceResponse { Status = "200", Message = "Success", Result = timeSlots });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError("Error in GetTimeSlots | Exception: {Exception}", ex);
+                AppLogs.LogError($"Error in GetTimeSlots | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region GetVisitorSessions
@@ -697,16 +987,24 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
+                _logger.LogInformation($"GetVisitorSessions started | SiteId: {SiteId}");
+                AppLogs.InfoLogs($"GetVisitorSessions started | SiteId: {SiteId}");
+
                 var sessions = await _siteRepository.GetVisitorBaySessions(SiteId);
+                _logger.LogInformation($"Successfully retrieved visitor sessions | SiteId: {SiteId}");
+                AppLogs.InfoLogs($"Successfully retrieved visitor sessions | SiteId: {SiteId}");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = sessions });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError($"Error in GetVisitorSessions | SiteId: {SiteId} | Exception: {ex}");
+                AppLogs.LogError($"Error in GetVisitorSessions | SiteId: {SiteId} | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse() { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region GetVehicleDetails
@@ -719,16 +1017,24 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
+                _logger.LogInformation("GetVehicleDetails started");
+                AppLogs.InfoLogs("GetVehicleDetails started");
+
                 var vehicles = await _vehicleRegistrationRepository.GetVehicleDetails();
+                _logger.LogInformation($"Successfully retrieved {vehicles.Count()} vehicle details");
+                AppLogs.InfoLogs($"Successfully retrieved {vehicles.Count()} vehicle details");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = vehicles });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError($"Error in GetVehicleDetails | Exception: {ex}");
+                AppLogs.LogError($"Error in GetVehicleDetails | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse() { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region GetTenantsBySite
@@ -742,16 +1048,25 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-                //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
+                _logger.LogInformation($"GetTenantsBySite started | SiteId: {SiteId}");
+                AppLogs.InfoLogs($"GetTenantsBySite started | SiteId: {SiteId}");
+
                 var users = await _vehicleRegistrationRepository.GetTenantsBySite(SiteId);
+
+                _logger.LogInformation($"Successfully retrieved {users.Count()} tenants for SiteId: {SiteId}");
+                AppLogs.InfoLogs($"Successfully retrieved {users.Count()} tenants for SiteId: {SiteId}");
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = users });
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError($"Error in GetTenantsBySite | SiteId: {SiteId} | Exception: {ex}");
+                AppLogs.LogError($"Error in GetTenantsBySite | SiteId: {SiteId} | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse() { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region AddVehicles
@@ -765,25 +1080,26 @@ namespace LabelPadCoreApi.Controllers
         {
             try
             {
-
+                _logger.LogInformation("AddVehicles started with {Count} vehicles", objdata?.Count ?? 0);
+                AppLogs.InfoLogs($"AddVehicles started with {objdata?.Count ?? 0} vehicles");
 
                 var result = await _vehicleRegistrationRepository.AddVehicles(objdata);
-                if (result != null)
-                {
-                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = objdata });
-                }
-                else
-                {
-                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = objdata });
-                }
 
+                    _logger.LogInformation("AddVehicles successful for {Count} vehicles", objdata.Count);
+                    AppLogs.InfoLogs($"AddVehicles successful for {objdata.Count} vehicles");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = objdata });
+               
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the AddSite Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError($"Error in AddVehicles | Exception: {ex}");
+                AppLogs.LogError($"Error in AddVehicles | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse() { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region VisitorParkingDelete
@@ -792,21 +1108,40 @@ namespace LabelPadCoreApi.Controllers
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        [HttpGet("VisitorParkingDelete")]
+        [HttpDelete("VisitorParkingDelete")]
         public async Task<IActionResult> VisitorParkingDelete(int Id)
         {
             try
             {
-                //AppLogs.InfoLogs("SiteDelete Method was started,Controller:Admin");
+                _logger.LogInformation("VisitorParkingDelete started for Id: {Id}", Id);
+                AppLogs.InfoLogs($"VisitorParkingDelete started for Id: {Id}");
+
                 var result = await _visitorParkingRepository.DeleteVisitorParking(Id);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
+
+                if (result)
+                {
+                    _logger.LogInformation("VisitorParkingDelete successful for Id: {Id}", Id);
+                    AppLogs.InfoLogs($"VisitorParkingDelete successful for Id: {Id}");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
+                }
+                else
+                {
+                    _logger.LogWarning("VisitorParkingDelete failed for Id: {Id}", Id);
+                    AppLogs.LogWarning($"VisitorParkingDelete failed for Id: {Id}");
+
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Deletion failed", Result = null });
+                }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the SiteDelete Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError("Error in VisitorParkingDelete | Id: {Id} | Exception: {Exception}", Id, ex);
+                AppLogs.LogError($"Error in VisitorParkingDelete | Id: {Id} | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse() { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region ManageParkingDelete
@@ -815,21 +1150,40 @@ namespace LabelPadCoreApi.Controllers
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        [HttpGet("ManageParkingDelete")]
+        [HttpDelete("ManageParkingDelete")]
         public async Task<IActionResult> ManageParkingDelete(int Id, int bayno)
         {
             try
             {
-                //AppLogs.InfoLogs("SiteDelete Method was started,Controller:Admin");
+                _logger.LogInformation("ManageParkingDelete started for Id: {Id}, BayNo: {BayNo}", Id, bayno);
+                AppLogs.InfoLogs($"ManageParkingDelete started for Id: {Id}, BayNo: {bayno}");
+
                 var result = await _siteRepository.DeleteManageParking(Id, bayno);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
+
+                if (result)
+                {
+                    _logger.LogInformation("ManageParkingDelete successful for Id: {Id}, BayNo: {BayNo}", Id, bayno);
+                    AppLogs.InfoLogs($"ManageParkingDelete successful for Id: {Id}, BayNo: {bayno}");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
+                }
+                else
+                {
+                    _logger.LogWarning("ManageParkingDelete failed for Id: {Id}, BayNo: {BayNo}", Id, bayno);
+                    AppLogs.LogWarning($"ManageParkingDelete failed for Id: {Id}, BayNo: {bayno}");
+
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Deletion failed", Result = null });
+                }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the SiteDelete Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError("Error in ManageParkingDelete | Id: {Id}, BayNo: {BayNo} | Exception: {Exception}", Id, bayno, ex);
+                AppLogs.LogError($"Error in ManageParkingDelete | Id: {Id}, BayNo: {bayno} | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse() { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region SiteDelete
@@ -838,21 +1192,40 @@ namespace LabelPadCoreApi.Controllers
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        [HttpGet("SiteDelete")]
+        [HttpDelete("SiteDelete/{Id}")]
         public async Task<IActionResult> SiteDelete(int Id)
         {
             try
             {
-                //AppLogs.InfoLogs("SiteDelete Method was started,Controller:Admin");
+                _logger.LogInformation("SiteDelete started for Id: {Id}", Id);
+                AppLogs.InfoLogs($"SiteDelete started for Id: {Id}");
+
                 var result = await _siteRepository.DeleteSite(Id);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
+
+                if (result)
+                {
+                    _logger.LogInformation("SiteDelete successful for Id: {Id}", Id);
+                    AppLogs.InfoLogs($"SiteDelete successful for Id: {Id}");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Site deleted successfully", Result = result });
+                }
+                else
+                {
+                    _logger.LogWarning("SiteDelete failed for Id: {Id}", Id);
+                    AppLogs.LogWarning($"SiteDelete failed for Id: {Id}");
+
+                    return NotFound(new ApiServiceResponse() { Status = "404", Message = "Site not found or could not be deleted", Result = null });
+                }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the SiteDelete Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError("Error in SiteDelete | Id: {Id} | Exception: {Exception}", Id, ex);
+                AppLogs.LogError($"Error in SiteDelete | Id: {Id} | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse() { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
         #region GetSiteById
@@ -861,21 +1234,40 @@ namespace LabelPadCoreApi.Controllers
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        [HttpGet("GetSiteById")]
+        [HttpGet("GetSiteById/{Id}")]
         public async Task<IActionResult> GetSiteById(int Id)
         {
             try
             {
-                //AppLogs.InfoLogs("GetSiteById Method was started,Controller:Admin");
-                var sites = await _siteRepository.GetSiteById(Id);
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = sites });
+                _logger.LogInformation("GetSiteById started for Id: {Id}", Id);
+                AppLogs.InfoLogs($"GetSiteById started for Id: {Id}");
+
+                var site = await _siteRepository.GetSiteById(Id);
+
+                if (site != null)
+                {
+                    _logger.LogInformation("GetSiteById successful for Id: {Id}", Id);
+                    AppLogs.InfoLogs($"GetSiteById successful for Id: {Id}");
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = site });
+                }
+                else
+                {
+                    _logger.LogWarning("GetSiteById failed, site not found for Id: {Id}", Id);
+                    AppLogs.LogWarning($"GetSiteById failed, site not found for Id: {Id}");
+
+                    return NotFound(new ApiServiceResponse() { Status = "404", Message = "Site not found", Result = null });
+                }
             }
             catch (Exception ex)
             {
-                //AppLogs.InfoLogs("Error occured in the GetSiteById Method,Controller:Admin" + ex.ToString());
-                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+                _logger.LogError("Error in GetSiteById | Id: {Id} | Exception: {Exception}", Id, ex);
+                AppLogs.LogError($"Error in GetSiteById | Id: {Id} | Exception: {ex}");
+
+                return StatusCode(500, new ApiServiceResponse() { Status = "-100", Message = "Internal server error", Result = null });
             }
         }
+
         #endregion
 
 
