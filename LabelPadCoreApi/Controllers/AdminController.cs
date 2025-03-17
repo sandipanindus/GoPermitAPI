@@ -1500,7 +1500,7 @@ namespace LabelPadCoreApi.Controllers
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key = _userRepository.SendEmail(addUser.Email, addUser.FirstName, "Set Password from Go permit", body, "GOPERMIT_Set Password");
+                        bool key =await _userRepository.SendEmailAsync(addUser.Email, addUser.FirstName, "Set Password from Go permit", body, "GOPERMIT_Set Password");
                         if (key == true)
                         {
                             return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
@@ -1579,7 +1579,7 @@ namespace LabelPadCoreApi.Controllers
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key = _userRepository.SendEmail(addUser.Email, addUser.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
+                        bool key = await _userRepository.SendEmailAsync(addUser.Email, addUser.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
                         if (key == true)
                         {
                             return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = addUser });
@@ -1754,7 +1754,7 @@ namespace LabelPadCoreApi.Controllers
                             myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                             string body = myString;
-                            bool key = _userRepository.SendEmail(addUser[i].Email, addUser[i].FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
+                            bool key = await _userRepository.SendEmailAsync(addUser[i].Email, addUser[i].FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
                             //if (key == true)
                             //{
                             //    return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
@@ -1851,7 +1851,7 @@ namespace LabelPadCoreApi.Controllers
                         //  myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Welcome ", body, "GOPERMIT_welcome");
+                        bool key = await _userRepository.SendEmailAsync(user.Email, user.FirstName, "Welcome ", body, "GOPERMIT_welcome");
                     }
                 }
                 var result = await _userRepository.UpdateTenantUser_New(addUser);
@@ -2350,7 +2350,7 @@ namespace LabelPadCoreApi.Controllers
                     myString = myString.Replace("%{#{Name}#}%", user.FirstName + " " + user.LastName);
 
                     string body = myString;
-                    bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Welcome to Go Permit !", body, "GOPERMIT_Welcome");
+                    bool key = await _userRepository.SendEmailAsync(user.Email, user.FirstName, "Welcome to Go Permit !", body, "GOPERMIT_Welcome");
                     return Ok(new ApiServiceResponse() { Status = "200", Message = "Your password was generated", Result = null });
                 }
                 else
@@ -2443,7 +2443,7 @@ namespace LabelPadCoreApi.Controllers
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Password Verification from Go permit", body, "GOPERMIT_Verify Password");
+                        bool key = await _userRepository.SendEmailAsync(user.Email, user.FirstName, "Password Verification from Go permit", body, "GOPERMIT_Verify Password");
                         if (key == true)
                         {
                             return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
@@ -2510,7 +2510,7 @@ namespace LabelPadCoreApi.Controllers
                     myString = myString.Replace("%{#{Name}#}%", name);
                     myString = myString.Replace("%{#{Response}#}%", obj.Issue);
                     string body = myString;
-                    bool key = _userRepository.SendEmail(email, name, obj.Subject, body, "GOPERMIT_Responce");
+                    bool key = await _userRepository.SendEmailAsync(email, name, obj.Subject, body, "GOPERMIT_Responce");
                     if (key == true)
                     {
                         return Ok(new ApiServiceResponse() { Status = "200", Message = "Response send successfully", Result = null });
@@ -2563,7 +2563,7 @@ namespace LabelPadCoreApi.Controllers
                     // string dt = DateTime.Now.ToString("MM.dd.yyyy");
                     //   myString = myString.Replace("%{#{Datetime}#}%", dt);
                     string body = myString;
-                    bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Welcome to Go Permit !", body, "GOPERMIT_Welocome");
+                    bool key = await _userRepository.SendEmailAsync(user.Email, user.FirstName, "Welcome to Go Permit !", body, "GOPERMIT_Welocome");
                     if (key == true)
                     {
                         return Ok(new ApiServiceResponse() { Status = "200", Message = "Your mail activation done", Result = null });
@@ -2782,7 +2782,7 @@ namespace LabelPadCoreApi.Controllers
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key = _userRepository.SendEmail(model.Email, model.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
+                        bool key = await _userRepository.SendEmailAsync(model.Email, model.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
                         if (key == true)
                         {
                             return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
@@ -2863,7 +2863,7 @@ namespace LabelPadCoreApi.Controllers
                             myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                             string body = myString;
-                            bool key = _userRepository.SendEmail(addRegister.Email, addRegister.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
+                            bool key = await _userRepository.SendEmailAsync(addRegister.Email, addRegister.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
                         }
                         else
                         {
@@ -2878,7 +2878,7 @@ namespace LabelPadCoreApi.Controllers
                             // string dt = DateTime.Now.ToString("MM.dd.yyyy");
                             //  myString = myString.Replace("%{#{Datetime}#}%", dt);
                             string body = myString;
-                            bool key = _userRepository.SendEmail(user.Email, user.FirstName, "Welcome to Go Permit!", body, "GOPERMIT_Welcome");
+                            bool key = await _userRepository.SendEmailAsync(user.Email, user.FirstName, "Welcome to Go Permit!", body, "GOPERMIT_Welcome");
                             if (key == true)
                             {
                                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Tenant registered successfully", Result = null });
@@ -3105,7 +3105,7 @@ namespace LabelPadCoreApi.Controllers
             try
             {
                 //AppLogs.InfoLogs("GetUserById Method was started,Controller:Admin");
-                bool result = _userRepository.SendEmail(EmailId, User, Subject, Body, Headername);
+                bool result = await _userRepository.SendEmailAsync(EmailId, User, Subject, Body, Headername);
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
