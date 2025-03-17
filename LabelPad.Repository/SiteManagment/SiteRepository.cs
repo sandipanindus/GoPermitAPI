@@ -390,8 +390,8 @@ namespace LabelPad.Repository.SiteManagment
                 for (int i = 0; i < supports.Count; i++)
                 {
                     GetSupportList model = new GetSupportList();
-                    string subject = supports[i].Subject;
-                    var result = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Subject == subject).FirstOrDefault();
+                    int subject = supports[i].Id;
+                    var result = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == subject).FirstOrDefault();
                     if (result != null)
                     {
                         int ticketid = result.Id;

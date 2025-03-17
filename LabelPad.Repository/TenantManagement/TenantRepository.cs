@@ -419,7 +419,9 @@ namespace LabelPad.Repository.TenantManagement
             {
                 string subject = support[i].Subject;
                 int ticketid = support[i].Id;
-                var objres = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Subject == subject).ToList();
+                //  var objres = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Subject == subject).ToList();
+                var objres = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == ticketid).ToList();
+
                 var lastcoment = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.TicketId == ticketid).OrderByDescending(x => x.TicketId)
                              .Take(1)
                              .Select(x => x.Issue)
