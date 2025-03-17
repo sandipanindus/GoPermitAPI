@@ -1765,7 +1765,7 @@ namespace LabelPad.Repository.UserManagement
         public async Task<bool> SendEmailAdminAsync(string EmailId, string Subject, string Body, string Headeraname)
         {
 
-            SmtpClient client = new SmtpClient();
+            SmtpClient client = new SmtpClient();   
             //  client.DeliveryMethod = SmtpDeliveryMethod.Network;
             client.EnableSsl = Convert.ToBoolean(_configuration["SSL"]);
             client.Host = _configuration["Host"];
