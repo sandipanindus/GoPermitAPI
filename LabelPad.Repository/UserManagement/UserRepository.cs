@@ -30,6 +30,7 @@ using MailKit.Security;
 using MimeKit;
 using System.Net.Http;
 using System.Text.Json;
+using Microsoft.Net.Http.Headers;
 
 
 
@@ -1765,42 +1766,25 @@ namespace LabelPad.Repository.UserManagement
         public async Task<bool> SendEmailAdminAsync(string EmailId, string Subject, string Body, string Headeraname)
         {
 
-            SmtpClient client = new SmtpClient();   
-            //  client.DeliveryMethod = SmtpDeliveryMethod.Network;
-            client.EnableSsl = Convert.ToBoolean(_configuration["SSL"]);
-            client.Host = _configuration["Host"];
-            client.Port = Convert.ToInt32(_configuration["Port"]);
+            string accessToken = await GetAccessTokenAsync(); // Get OAuth2 access token
 
-            NetworkCredential credentials = new NetworkCredential();
-            client.UseDefaultCredentials = false;
-            credentials.UserName = _configuration["AdminMail"];
-            credentials.Password = _configuration["Password"];
-            client.Credentials = credentials;
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(Headeraname, _configuration["EmailSettings:AdminMail"]));
+            message.To.Add(new MailboxAddress("", EmailId));
+            message.Subject = Subject;
 
+            var bodyBuilder = new BodyBuilder { HtmlBody = Body };
+            message.Body = bodyBuilder.ToMessageBody();
 
-            MailMessage mailMessage = new MailMessage();
-            mailMessage.From = new MailAddress(_configuration["AdminMail"],
-               Headeraname);
-            mailMessage.To.Add(new MailAddress(EmailId));
+            using var client = new MailKit.Net.Smtp.SmtpClient();
+            await client.ConnectAsync(_configuration["EmailSettings:SMTP_Host"], Convert.ToInt32(_configuration["EmailSettings:SMTP_Port"]), SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(new SaslMechanismOAuth2(_configuration["EmailSettings:Username"], accessToken));
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
 
-            mailMessage.Subject = Subject;
-            mailMessage.IsBodyHtml = true;
-            string Body1 = Body;
+            return true;
 
-            mailMessage.Body = Body1;
-            try
-            {
-                //AppLogs.InfoLogs("Start  test email sending AT client.Send(mailMessage) STATEMENT, Login Controller FORM, Method :SendMail");
-                client.Send(mailMessage);
-                //AppLogs.InfoLogs("End  test email sending AT client.Send(mailMessage) STATEMENT, Login Controller FORM, Method :SendMail");
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                //AppLogs.InfoLogs("Error  Sending Mail , Login FORM, Method :SendMail" + ex.ToString());
-                return true;
-            }
+            
         }
 
 
@@ -2207,7 +2191,7 @@ namespace LabelPad.Repository.UserManagement
         //new KeyValuePair<string, string>("client_secret", _emailSettings.OAuth.ClientSecret),
         //new KeyValuePair<string, string>("grant_type", "client_credentials"),
         //new KeyValuePair<string, string>("scope", "https://mail.google.com/") // Change based on provider
-        private async Task<string> GetAccessTokenAsync()
+        public async Task<string> GetAccessTokenAsync()
         {
             var emailSettings = _configuration.GetSection("EmailSettings").Get<EmailSettings>();
 

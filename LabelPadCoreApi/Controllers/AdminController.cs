@@ -29,9 +29,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.VisualBasic;
 using LabelPad.Repository.ReportManagement;
 using LabelPad.Repository.TenantManagement;
+using Microsoft.CodeAnalysis.Editing;
 using LabelPad.Repository.IndustryManagement;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using Azure.Core;
+using MailKit.Security;
+using MimeKit;
 
 namespace LabelPadCoreApi.Controllers
 {
@@ -331,7 +334,7 @@ namespace LabelPadCoreApi.Controllers
                     myString = myString.Replace("%{#{PropertyName}#}%", sitename);
                     // myString = myString.Replace("%{#{BayNo}#}%", bayid);
                     string body = myString;
-                    bool key = SendEmail(objdata.Email, objdata.Name, "Thank you for booking slot", body, tenantemail, objdata.cctome, "GOPERMIT_Slot Booking");
+                    bool key = await SendEmail(objdata.Email, objdata.Name, "Thank you for booking slot", body, tenantemail, objdata.cctome, "GOPERMIT_Slot Booking");
                     string myString1 = "";
 
                     if (objdata.cctome == true)
@@ -355,7 +358,7 @@ namespace LabelPadCoreApi.Controllers
                         myString1 = myString1.Replace("%{#{PropertyName}#}%", sitename);
 
                         string bodycc = myString1;
-                        key = SendEmail(objdata.Email, objdata.Name, "Thank you for booking slot", bodycc, tenantemail, objdata.cctome, "GOPERMIT_Slot Booking");
+                        key = await SendEmail(objdata.Email, objdata.Name, "Thank you for booking slot", bodycc, tenantemail, objdata.cctome, "GOPERMIT_Slot Booking");
 
                     }
 
@@ -904,6 +907,23 @@ namespace LabelPadCoreApi.Controllers
             }
         }
         #endregion
+
+        [HttpGet("GetSitesbyoperatorid")]
+        public async Task<IActionResult> GetSitesbyoperatorid(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId, int OperatorId)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
+                var sites = await _siteRepository.GetSitesbyoperatorid(PageNo, PageSize, LoginId, RoleId, SiteId, OperatorId);
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = sites });
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+
 
         #region GetZatparkLogs
         /// <summary>
@@ -1500,7 +1520,7 @@ namespace LabelPadCoreApi.Controllers
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
-                        bool key =await _userRepository.SendEmailAsync(addUser.Email, addUser.FirstName, "Set Password from Go permit", body, "GOPERMIT_Set Password");
+                        bool key = await _userRepository.SendEmailAsync(addUser.Email, addUser.FirstName, "Set Password from Go permit", body, "GOPERMIT_Set Password");
                         if (key == true)
                         {
                             return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
@@ -1576,6 +1596,7 @@ namespace LabelPadCoreApi.Controllers
                         string dt = DateTime.Now.ToString("MM.dd.yyyy");
                         myString = myString.Replace("%{#{Datetime}#}%", dt);
                         myString = myString.Replace("%{#{Name}#}%", addUser.FirstName + " " + addUser.LastName);
+
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
@@ -1673,7 +1694,7 @@ namespace LabelPadCoreApi.Controllers
                 objinput.Id = Convert.ToInt32(Request.Form["Id"]);
                 //objinput.ProfilePath = filefolder + uniqueFileName;
 
-                var result = _userRepository.UpdateProfileUploads(objinput);
+                var result = await _userRepository.UpdateProfileUploads(objinput);
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
             }
             catch (Exception ex)
@@ -1701,19 +1722,56 @@ namespace LabelPadCoreApi.Controllers
                 var user = _dbContext.RegisterUsers
                                     .Where(x => !x.IsDeleted && x.Id == request.Id)
                                     .FirstOrDefault();
+                if (user == null)
+                {
+                    return Ok(new ApiServiceResponse()
+                    {
+                        Status = "404",
+                        Message = "Failure",
+                        Result = "User not found"
+                    });
+                }
                 user.IsApproved = request.IsApproved;
                 user.IsActive = true;
                 user.UpdatedOn = DateTime.Now;
                 _dbContext.RegisterUsers.Update(user);
                 await _dbContext.SaveChangesAsync();
-                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = "User status updated successfully" });
 
+                var folderName = Path.Combine("EmailHtml", "ApproveDocuments.html");
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                StreamReader reader = new StreamReader(filePath);
+                //var resetLink = returnlink + addUser.EmailCode;
+                string readFile = reader.ReadToEnd();
+                string myString = "";
+                myString = readFile;
+                string dt = DateTime.Now.ToString("MM.dd.yyyy");
+                myString = myString.Replace("%{#{Datetime}#}%", dt);
+                myString = myString.Replace("%{#{Name}#}%", user.FirstName + " " + user.LastName);
+                //myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
+
+                string body = myString;
+
+                bool emailSent = await _userRepository.SendEmailAsync(
+                    user.Email,
+                    user.FirstName,
+                    "Approved Tenant from Go Permit",
+                    body,
+                    "GOPERMIT_Approved Tenant"
+                );
+
+                string approvalMessage = request.IsApproved
+                    ? "Tenant has been approved successfully."
+                    : "Tenant approval has been rejected.";
+
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = approvalMessage });
             }
             catch (Exception ex)
             {
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = ex.Message });
             }
         }
+
         #endregion
 
         #region AddBulkTenants
@@ -1985,6 +2043,39 @@ namespace LabelPadCoreApi.Controllers
             }
         }
         #endregion
+
+        [HttpGet("Getopeartoruser")]
+        public async Task<IActionResult> Getopeartoruser(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("GetUsers Method was started,Controller:Admin");
+                var roles = await _userRepository.GetOpeartoruser(PageNo, PageSize, LoginId, RoleId, SiteId);
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = roles });
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the GetUsers Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+
+        [HttpGet("GetSiteUser")]
+        public async Task<IActionResult> GetSiteUser(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("GetUsers Method was started,Controller:Admin");
+                var roles = await _userRepository.GetSiteUser(PageNo, PageSize, LoginId, RoleId, SiteId);
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = roles });
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the GetUsers Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+
 
         #region GetRoles
         /// <summary>
@@ -2730,17 +2821,7 @@ namespace LabelPadCoreApi.Controllers
                     var result1 = await _userRepository.AddTenant(model);
                     if (result1 != null)
                     {
-                        //string returnlink = _configuration["AdminPromptUrl"];
-                        //var folderNameObj = Path.Combine("EmailHtml", "AdminPrompt.html");
-                        //var filePathObj = Path.Combine(Directory.GetCurrentDirectory(), folderNameObj);
 
-                        //StreamReader reader = new StreamReader(filePathObj);
-                        //var resetLink = returnlink + model.EmailCode;
-                        //string readFile = reader.ReadToEnd();
-                        //string myString = "";
-                        //myString = readFile;
-                        //string dt = DateTime.Now.ToString("MM.dd.yyyy");
-                        //myString = myString.Replace("%{#{Datetime}#}%", dt);
                         var folderNameObj = Path.Combine("EmailHtml", "AdminPrompt.html");
                         var filePathObj = Path.Combine(Directory.GetCurrentDirectory(), folderNameObj);
 
@@ -2753,16 +2834,8 @@ namespace LabelPadCoreApi.Controllers
                         myString = myString.Replace("%{#{Datetime}#}%", dt);
 
                         string body = myString;
-                        bool key = SendEmailAdmin(_configuration["AdminTenantMail"], "Go Permit New Customer Application", body, "Go Permit New Customer Application");
-                        //if (key == true)
-                        //{
-                        //    return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
-                        //}
-                        //else
-                        //{
-                        //    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Sending mail error occured", Result = null });
-                        //}
-                        //  return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = addUser });
+                        bool key = await _userRepository.SendEmailAdminAsync(_configuration["EmailSettings:AdminMail"], "Go Permit New Customer Application", body, "Go Permit New Customer Application");
+
                     }
                     // var result = await _userRepository.AddTenant(model);
                     if (true)
@@ -2953,55 +3026,6 @@ namespace LabelPadCoreApi.Controllers
         //}
         //#endregion
 
-        #region SendEmailAdmin
-        /// <summary>
-        /// method to send the mail
-        /// </summary>
-        /// <param name="EmailId"></param>
-        /// <param name="EmailCode"></param>
-        /// <param name="ActivateLink"></param>
-        /// <returns></returns>
-        bool SendEmailAdmin(string EmailId, string Subject, string Body, string Headeraname)
-        {
-
-            SmtpClient client = new SmtpClient();
-            //  client.DeliveryMethod = SmtpDeliveryMethod.Network;
-            client.EnableSsl = Convert.ToBoolean(_configuration["SSL"]);
-            client.Host = _configuration["Host"];
-            client.Port = Convert.ToInt32(_configuration["Port"]);
-
-            NetworkCredential credentials = new NetworkCredential();
-            client.UseDefaultCredentials = false;
-            credentials.UserName = _configuration["AdminMail"];
-            credentials.Password = _configuration["Password"];
-            client.Credentials = credentials;
-
-
-            MailMessage mailMessage = new MailMessage();
-            mailMessage.From = new MailAddress(_configuration["AdminMail"],
-               Headeraname);
-            mailMessage.To.Add(new MailAddress(EmailId));
-
-            mailMessage.Subject = Subject;
-            mailMessage.IsBodyHtml = true;
-            string Body1 = Body;
-
-            mailMessage.Body = Body1;
-            try
-            {
-                //AppLogs.InfoLogs("Start  test email sending AT client.Send(mailMessage) STATEMENT, Login Controller FORM, Method :SendMail");
-                client.Send(mailMessage);
-                //AppLogs.InfoLogs("End  test email sending AT client.Send(mailMessage) STATEMENT, Login Controller FORM, Method :SendMail");
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                //AppLogs.InfoLogs("Error  Sending Mail , Login FORM, Method :SendMail" + ex.ToString());
-                return true;
-            }
-        }
-        #endregion
 
         #region SendEmail2
         /// <summary>
@@ -3012,8 +3036,14 @@ namespace LabelPadCoreApi.Controllers
         /// <param name="EmailCode"></param>
         /// <param name="ActivateLink"></param>
         /// <returns></returns>
-        bool SendEmail(string EmailId, string User, string Subject, string Body, string CC, bool cc, string headername)
+        bool SendEmail1(string EmailId, string User, string Subject, string Body, string CC, bool cc, string headername)
         {
+
+
+
+
+
+
 
             SmtpClient client = new SmtpClient();
             //   client.DeliveryMethod = SmtpDeliveryMethod.Network;
@@ -3058,7 +3088,40 @@ namespace LabelPadCoreApi.Controllers
         }
         #endregion
 
+        public async Task<bool> SendEmail(string EmailId, string User, string Subject, string Body, string CC, bool cc, string HeaderName)
+        {
+            try
+            {
+                string accessToken = await _userRepository.GetAccessTokenAsync();
 
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(HeaderName, _configuration["EmailSettings:AdminMail"]));
+                message.To.Add(new MailboxAddress("", EmailId));
+
+                if (cc && !string.IsNullOrWhiteSpace(CC))
+                {
+                    message.Cc.Add(new MailboxAddress("", CC));
+                }
+
+                message.Subject = Subject;
+                var bodyBuilder = new BodyBuilder { HtmlBody = Body };
+                message.Body = bodyBuilder.ToMessageBody();
+
+                using var client = new MailKit.Net.Smtp.SmtpClient();
+                await client.ConnectAsync(_configuration["EmailSettings:SMTP_Host"], Convert.ToInt32(_configuration["EmailSettings:SMTP_Port"]), SecureSocketOptions.StartTls);
+                await client.AuthenticateAsync(new SaslMechanismOAuth2(_configuration["EmailSettings:Username"], accessToken));
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log error (you can replace this with your logging mechanism)
+                Console.WriteLine($"Error sending email: {ex.Message}");
+                return false;
+            }
+        }
 
         #region GetSearchPingFilter
         /// <summary>
