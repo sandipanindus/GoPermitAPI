@@ -1786,6 +1786,30 @@ namespace LabelPad.Repository.UserManagement
 
             
         }
+        public async Task<dynamic> UpdateOperatorLogoUploads(OperatorLogoRequest objinput)
+        {
+            int Id = objinput.Id;
+            RegisterUser user = _dbContext.RegisterUsers
+                .Where(x => x.IsDeleted == false && x.Id == Id)
+                .FirstOrDefault();
+
+            if (user != null)
+            {
+                if (objinput.OperatorLogo != null)
+                {
+                    user.OperatorLogo = objinput.OperatorLogo;
+                }
+
+                user.IsActive = true;
+                _dbContext.RegisterUsers.Update(user);
+                _dbContext.SaveChanges();
+
+               
+                return new { Message = "Updated Successfully" };
+            }
+
+            return new { Message = "User Not Found" };
+        }
 
 
         public async Task<dynamic> UpdateUserStatus(int Id)

@@ -1702,6 +1702,51 @@ namespace LabelPadCoreApi.Controllers
                 return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
             }
         }
+
+        [HttpPost("AddOperatorLogo")]
+        public async Task<IActionResult> AddOperatorLogo([FromForm(Name = "fileupload")] List<IFormFile> files)
+        {
+            try
+            {
+                OperatorLogoRequest objinput = new OperatorLogoRequest();
+                string filefolder = string.Empty;
+                var folderName = string.Empty;
+                string filePath = string.Empty;
+                var uniqueFileName = "";
+                Guid guid;
+
+                var file = Request.Form.Files["fileupload"];
+                if (file != null)
+                {
+                    filefolder = _configuration["OperatorLogoPath"];
+                    folderName = Path.Combine("OperatorLogoFiles");
+                    filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                    guid = Guid.NewGuid();
+                    uniqueFileName = guid + "-" + file.FileName;
+                    objinput.OperatorLogo = filefolder + uniqueFileName;
+
+                    if (!Directory.Exists(filePath))
+                    {
+                        Directory.CreateDirectory(filePath);
+                    }
+
+                    using (var fileStream = new FileStream(Path.Combine(filePath, uniqueFileName), FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);
+                    }
+                }
+
+                objinput.Id = Convert.ToInt32(Request.Form["Id"]);
+
+                var result = await _userRepository.UpdateOperatorLogoUploads(objinput);
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = result });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+
         #endregion
         public class ApproveTenantRequest
         {

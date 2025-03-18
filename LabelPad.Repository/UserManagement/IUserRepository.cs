@@ -39,6 +39,7 @@ namespace LabelPad.Repository.UserManagement
         Task<bool> SendEmailAsync(string EmailId, string User, string Subject, string Body, string Headeraname);
         Task<bool> SendEmailAdminAsync(string EmailId, string Subject, string Body, string Headeraname);
         Task<string> GetAccessTokenAsync();
+        Task<dynamic> UpdateOperatorLogoUploads(OperatorLogoRequest objinput);
         //public bool SendEmail(string EmailId, string User, string Subject, string Body, string Headeraname);
         //public bool SendEmailAdmin(string EmailId, string Subject, string Body, string Headeraname);
         // Task<string> GetAccessTokenAsync();
