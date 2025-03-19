@@ -13,14 +13,17 @@ using LabelPad.Domain.Data;
 using LabelPad.Domain.Models;
 using LabelPad.Repository.SiteManagment;
 using LabelPad.Repository.TenantManagement;
+using LabelPad.Repository.UserManagement;
 using LabelPad.Repository.VehicleRegistrationManagement;
 using LabelPadCoreApi.Models;
+using MailKit.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using MimeKit;
 
 namespace LabelPadCoreApi.Controllers
 {
@@ -31,14 +34,16 @@ namespace LabelPadCoreApi.Controllers
         private readonly LabelPadDbContext _dbContext;
         private readonly ITenantRepository _tenantRepository;
         private readonly ISiteRepository _siteRepository;
+        private readonly IUserRepository _userRepository;
 
         private readonly IConfiguration _configuration;
-        public TenantController(LabelPadDbContext dbContext, ITenantRepository tenantRepository, IConfiguration configuration, ISiteRepository siteRepository)
+        public TenantController(LabelPadDbContext dbContext, ITenantRepository tenantRepository, IConfiguration configuration, ISiteRepository siteRepository, IUserRepository userRepository)
         {
             _dbContext = dbContext;
             _tenantRepository = tenantRepository;
             _configuration = configuration;
             _siteRepository = siteRepository;
+            _userRepository = userRepository;
         }
 
         #region GetVisitorParkings
@@ -413,7 +418,7 @@ namespace LabelPadCoreApi.Controllers
 
                     myString = myString.Replace("%{#{Name}#}%", user.FirstName + " " + user.LastName);
                     string body = myString;
-                    bool key = SendEmail(user.Email, user.FirstName, "We will Contact Shortly !", body, "GOPERMIT_WE Contact");
+                    bool key = await SendEmail(user.Email, user.FirstName, "We will Contact Shortly !", body, "GOPERMIT_WE Contact");
                     folderName = Path.Combine("EmailHtml", "SupportAdmin.html");
                     filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
                     reader = new StreamReader(filePath);
@@ -434,8 +439,8 @@ namespace LabelPadCoreApi.Controllers
                     myString = myString.Replace("%{#{Address}#}%", user.Address);
                     myString = myString.Replace("%{#{Issue}#}%", objdata.Issue);
                     body = myString;
-                    string email = _configuration["AdminMail"];
-                    key = SendEmail(email, "Admin", objdata.Subject, body, "GOPERMIT_Support");
+                    string email = _configuration["EmailSettings:AdminMail"];
+                    key = await SendEmail(email, "Admin", objdata.Subject, body, "GOPERMIT_Support");
                     if (key == true)
                     {
                         return Ok(new ApiServiceResponse() { Status = "200", Message = "send successfully", Result = null });
@@ -488,7 +493,7 @@ namespace LabelPadCoreApi.Controllers
 
                     myString = myString.Replace("%{#{Name}#}%", user.FirstName);
                     string body = myString;
-                    bool key = SendEmail(user.Email, user.FirstName, "We will Contact Shortly !", body, "GOPERMIT_Contact");
+                    bool key = await SendEmail(user.Email, user.FirstName, "We will Contact Shortly !", body, "GOPERMIT_Contact");
                     folderName = Path.Combine("EmailHtml", "SupportAdmin.html");
                     filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
                     reader = new StreamReader(filePath);
@@ -509,8 +514,8 @@ namespace LabelPadCoreApi.Controllers
                     myString = myString.Replace("%{#{Address}#}%", user.Address);
                     myString = myString.Replace("%{#{Issue}#}%", objdata.Issue);
                     body = myString;
-                    string email = _configuration["AdminMail"];
-                    key = SendEmail(email, "Admin", objdata.Subject, body, "GOPERMIT_Admin");
+                    string email = _configuration["EmailSettings:AdminMail"];
+                    key = await SendEmail(email, "Admin", objdata.Subject, body, "GOPERMIT_Admin");
                     if (key == true)
                     {
                         return Ok(new ApiServiceResponse() { Status = "200", Message = "send successfully", Result = null });
@@ -572,7 +577,7 @@ namespace LabelPadCoreApi.Controllers
         /// <param name="EmailCode"></param>
         /// <param name="ActivateLink"></param>
         /// <returns></returns>
-        bool SendEmail(string EmailId, string User, string Subject, string Body, string headername)
+        bool SendEmail1(string EmailId, string User, string Subject, string Body, string headername)
         {
 
             SmtpClient client = new SmtpClient();
@@ -583,13 +588,13 @@ namespace LabelPadCoreApi.Controllers
 
             NetworkCredential credentials = new NetworkCredential();
             client.UseDefaultCredentials = false;
-            credentials.UserName = _configuration["AdminMail"];
+            credentials.UserName = _configuration["EmailSettings:AdminMail"]; 
             credentials.Password = _configuration["Password"];
             client.Credentials = credentials;
 
 
             MailMessage mailMessage = new MailMessage();
-            mailMessage.From = new MailAddress(_configuration["AdminMail"],
+            mailMessage.From = new MailAddress(_configuration["EmailSettings:AdminMail"],
                headername);
             mailMessage.To.Add(new MailAddress(EmailId));
 
@@ -613,6 +618,38 @@ namespace LabelPadCoreApi.Controllers
             }
         }
         #endregion
+
+        public async Task<bool> SendEmail(string EmailId, string User, string Subject, string Body, string headername)
+        {
+            try
+            {
+                string accessToken = await _userRepository.GetAccessTokenAsync(); // Fetch OAuth access token
+
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(headername, _configuration["EmailSettings:AdminMail"]));
+                message.To.Add(new MailboxAddress("", EmailId));
+                message.Subject = Subject;
+
+                var bodyBuilder = new BodyBuilder { HtmlBody = Body };
+                message.Body = bodyBuilder.ToMessageBody();
+
+                using var client = new MailKit.Net.Smtp.SmtpClient();
+                await client.ConnectAsync(_configuration["EmailSettings:SMTP_Host"], Convert.ToInt32(_configuration["EmailSettings:SMTP_Port"]), SecureSocketOptions.StartTls);
+
+                // Authenticate using OAuth2
+                await client.AuthenticateAsync(new SaslMechanismOAuth2(_configuration["EmailSettings:Username"], accessToken));
+
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error sending email: " + ex.Message);
+                return false;
+            }
+        }
 
         [HttpGet("GetVehicleDetailsbytenant")]
         public async Task<IActionResult> GetVehicleDetails(string tenantid)
