@@ -863,10 +863,10 @@ namespace LabelPad.Repository.UserManagement
                 {
                     if (record.RegisterUserId == Id)
                         record.RegisterUserId = 0;
-
+                         record.Status = false;
                     if (record.UpdatedBy == Id)
                         record.UpdatedBy = 0;
-
+                         record.Status = false;
                     record.UpdatedOn = DateTime.Now;
                 }
 
