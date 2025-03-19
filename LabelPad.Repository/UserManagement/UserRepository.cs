@@ -824,26 +824,63 @@ namespace LabelPad.Repository.UserManagement
             
             return new { Message = "User saved successfully" };
         }
-
-
+        //public async Task<dynamic> DeleteUser(int Id)
+        //{
+        //    RegisterUser user = await _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == Id).FirstOrDefaultAsync();
+        //    if (user != null)
+        //    {
+        //        user.IsDeleted = true;
+        //        user.IsActive = false;
+        //        user.UpdatedOn = DateTime.Now;
+        //        _dbContext.RegisterUsers.Update(user);
+        //        await _dbContext.SaveChangesAsync();
+        //        return new { Message = "User deleted successfully" };
+        //    }
+        //    else
+        //    {
+        //        return new { Message = "No data found" };
+        //    }
+        //}
         public async Task<dynamic> DeleteUser(int Id)
         {
-            RegisterUser user = await _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == Id).FirstOrDefaultAsync();
+            RegisterUser user = await _dbContext.RegisterUsers
+                .Where(x => x.IsDeleted == false && x.Id == Id)
+                .FirstOrDefaultAsync();
+
             if (user != null)
             {
                 user.IsDeleted = true;
                 user.IsActive = false;
                 user.UpdatedOn = DateTime.Now;
+
                 _dbContext.RegisterUsers.Update(user);
                 await _dbContext.SaveChangesAsync();
-                return new { Message = "User deleted successfully" };
+                var parkingBayRecords = await _dbContext.ParkingBayNos
+                    .Where(x => x.RegisterUserId == Id || x.UpdatedBy == Id)
+                    .ToListAsync();
 
+                foreach (var record in parkingBayRecords)
+                {
+                    if (record.RegisterUserId == Id)
+                        record.RegisterUserId = 0;
+
+                    if (record.UpdatedBy == Id)
+                        record.UpdatedBy = 0;
+
+                    record.UpdatedOn = DateTime.Now;
+                }
+
+                _dbContext.ParkingBayNos.UpdateRange(parkingBayRecords);
+                await _dbContext.SaveChangesAsync();
+
+                return new { Message = "User deleted successfully and ParkingBayNos updated" };
             }
             else
             {
                 return new { Message = "No data found" };
             }
         }
+
 
         public bool GetExistsTenantUser(AddTenantUser addUserAc)
         {

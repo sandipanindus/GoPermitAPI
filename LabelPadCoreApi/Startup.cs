@@ -162,6 +162,12 @@ Path.Combine(Directory.GetCurrentDirectory(), @"TenantResidencyFiles")),
 Path.Combine(Directory.GetCurrentDirectory(), @"TenantIdentityProofFiles")),
                 RequestPath = new PathString("/TenantIdentityProofFiles")
             });
+            app.UseStaticFiles(new StaticFileOptions()
+            {
+                FileProvider = new PhysicalFileProvider(
+Path.Combine(Directory.GetCurrentDirectory(), @"OperatorLogoFiles")),
+                RequestPath = new PathString("/OperatorLogoFiles")
+            });
             //app.UseHttpsRedirection();
 
             app.UseRouting();
