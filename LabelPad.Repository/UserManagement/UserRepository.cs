@@ -718,9 +718,9 @@ namespace LabelPad.Repository.UserManagement
                                         }
                                         else
                                         {
-                                          //  whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
+                                            whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
                                         }
-                                        // whitelistvehicle(Convert.ToInt32(addUser.SiteId), vr.VRM);
+                                         whitelistvehicle(Convert.ToInt32(addUser.SiteId), vr.VRM);
 
                                     }
 
@@ -807,7 +807,7 @@ namespace LabelPad.Repository.UserManagement
                                         }
                                         else
                                         {
-                                          //  whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
+                                            whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
                                         }
                                     }
 
