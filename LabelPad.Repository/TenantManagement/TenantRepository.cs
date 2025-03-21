@@ -1,6 +1,7 @@
 ﻿using LabelPad.Domain.ApplicationClasses;
 using LabelPad.Domain.Data;
 using LabelPad.Domain.Models;
+using LabelPad.Repository.UserManagement;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -16,10 +17,12 @@ namespace LabelPad.Repository.TenantManagement
     {
         private readonly LabelPadDbContext _dbContext;
         private readonly IConfiguration _configuration;
-        public TenantRepository(LabelPadDbContext dbContext, IConfiguration configuration)
+        private readonly IUserRepository _userRepository;
+        public TenantRepository(LabelPadDbContext dbContext, IConfiguration configuration, IUserRepository userRepository)
         {
             _dbContext = dbContext;
             _configuration = configuration;
+            _userRepository = userRepository;
         }
 
         public async Task<dynamic> GetVehicleDetails(string tenantid)
@@ -975,8 +978,6 @@ namespace LabelPad.Repository.TenantManagement
 
             return new UpdateVehicleResponse { Messages = results };
         }
-
-
         public async Task<dynamic> AddVehicle_New(List<AddVehicleRegistrationAc> objinput)
         {
             var tenantBayList = objinput.Select(x => new { x.TenantId, BayNo = Convert.ToInt32(x.bayno) }).ToList();
@@ -993,7 +994,7 @@ namespace LabelPad.Repository.TenantManagement
                 .Where(x => existingVehicleIds.Contains(x.VehicleRegistrationId))
                 .ToList();
 
-          
+
 
 
             foreach (var input in objinput)
@@ -1077,7 +1078,7 @@ namespace LabelPad.Repository.TenantManagement
                     await _dbContext.SaveChangesAsync();
                 }
 
-               
+
 
                 var newVehicle = new VehicleRegistration
                 {
@@ -1119,7 +1120,9 @@ namespace LabelPad.Repository.TenantManagement
 
                 //if (DateTime.TryParse(input.dates, out DateTime parsedDate))
                 //{
-                 savemutliplevehciledates(newVehicle.Id, input.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
+                savemutliplevehciledates(newVehicle.Id, input.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
+                _userRepository.whitelistvehicle(Convert.ToInt32(user.Id), objinput[0].vrm);
+
                 //}
                 //else
                 //{
@@ -1131,6 +1134,162 @@ namespace LabelPad.Repository.TenantManagement
 
             return new AddVehicleResponse { Message = "Vehicles updated and new records inserted successfully" };
         }
+
+
+        //public async Task<dynamic> AddVehicle_New(List<AddVehicleRegistrationAc> objinput)
+        //{
+        //    var tenantBayList = objinput.Select(x => new { x.TenantId, BayNo = Convert.ToInt32(x.bayno) }).ToList();
+
+        //    var existingVehicles = _dbContext.VehicleRegistrations
+        //        .Where(v => v.IsActive)
+        //        .AsEnumerable()
+        //        .Where(v => tenantBayList.Any(tb => tb.TenantId == v.RegisterUserId && tb.BayNo == v.ParkingBayNo))
+        //        .ToList();
+
+        //    // Update existing time slots
+        //    var existingVehicleIds = existingVehicles.Select(v => v.Id).ToList();
+        //    var existingTimeSlots = _dbContext.VehicleRegistrationTimeSlots
+        //        .Where(x => existingVehicleIds.Contains(x.VehicleRegistrationId))
+        //        .ToList();
+
+
+
+
+        //    foreach (var input in objinput)
+        //    {
+        //        int bayno = Convert.ToInt32(input.bayno);
+        //        DateTime newStartDate = Convert.ToDateTime(input.StartDate);
+        //        DateTime newEndDate = Convert.ToDateTime(input.EndDate);
+
+        //        // Strict Overlap Check
+        //        var hasOverlap = _dbContext.VehicleRegistrations
+        //         .Any(v => v.ParkingBayNo == bayno &&
+        //          v.IsActive &&
+        //         !v.IsDeleted &&
+        //      (
+        //          ((v.StartDate.HasValue && v.StartDate.Value.TimeOfDay != TimeSpan.Zero) ||
+        //           (v.EndDate.HasValue && v.EndDate.Value.TimeOfDay != TimeSpan.Zero)) && // Only check records with time
+        //          (
+        //              (newStartDate >= v.StartDate && newStartDate < v.EndDate) ||  // Starts inside existing range
+        //              (newEndDate > v.StartDate && newEndDate <= v.EndDate) ||      // Ends inside existing range
+        //              (newStartDate <= v.StartDate && newEndDate >= v.EndDate)      // Covers the entire existing range
+        //          )
+        //      ));
+
+        //        if (hasOverlap)
+        //        {
+        //            return new AddVehicleResponse { Message = "Range Already Exist" };
+        //        }
+        //        else
+        //        {
+        //            int SelBayno = Convert.ToInt32(objinput[0].bayno);
+        //            var resp = _dbContext.VehicleRegistrations
+        //      .Where(v => v.ParkingBayNo == SelBayno)
+        //      .ToList();
+
+        //            if (resp.Any())
+        //            {
+        //                foreach (var slot in resp)
+        //                {
+        //                    // Check if both StartDate and EndDate exist and have time as 00:00
+        //                    bool isMidnight = slot.StartDate.HasValue && slot.StartDate.Value.TimeOfDay == TimeSpan.Zero &&
+        //                                      slot.EndDate.HasValue && slot.EndDate.Value.TimeOfDay == TimeSpan.Zero;
+
+        //                    if (slot.IsActive && !slot.IsDeleted && isMidnight)
+        //                    {
+        //                        slot.IsDeleted = true;
+        //                        slot.IsActive = false;
+        //                        slot.UpdatedOn = DateTime.Now;
+        //                    }
+        //                }
+
+        //                _dbContext.VehicleRegistrations.UpdateRange(resp);
+        //                await _dbContext.SaveChangesAsync();
+        //            }
+        //        }
+
+        //    }
+
+
+
+        //    foreach (var input in objinput)
+        //    {
+        //        var user = _dbContext.RegisterUsers
+        //            .FirstOrDefault(x => !x.IsDeleted && x.Id == input.TenantId && x.IsActive);
+
+        //        if (user == null) continue;
+
+        //        int bayno = Convert.ToInt32(input.bayno);
+
+        //        var parkingBay = _dbContext.ParkingBayNos
+        //            .FirstOrDefault(pb => pb.Id == bayno && !pb.IsDeleted && pb.IsActive);
+
+        //        if (parkingBay != null)
+        //        {
+        //            parkingBay.Status = true;
+        //            parkingBay.IsActive = true;
+        //            parkingBay.IsDeleted = false;
+        //            parkingBay.UpdatedBy = user.Id;
+        //            parkingBay.UpdatedOn = DateTime.Now;
+
+        //            _dbContext.ParkingBayNos.Update(parkingBay);
+        //            await _dbContext.SaveChangesAsync();
+        //        }
+
+
+
+        //        var newVehicle = new VehicleRegistration
+        //        {
+        //            IsActive = true,
+        //            IsDeleted = false,
+        //            IsSaveCount = 1,
+        //            RegisterUserId = user.Id,
+        //            VRM = input.vrm,
+        //            CreatedOn = DateTime.Now,
+        //            CreatedBy = user.Id,
+        //            StartDate = Convert.ToDateTime(input.StartDate),
+        //            EndDate = Convert.ToDateTime(input.EndDate),
+        //            ParkingBayNo = bayno
+        //        };
+
+        //        _dbContext.VehicleRegistrations.Add(newVehicle);
+        //        await _dbContext.SaveChangesAsync();
+
+        //        var responce = _dbContext.VehicleRegistrationTimeSlots
+        //              .Where(pb => pb.VehicleRegistrationId == newVehicle.Id)
+        //              .ToList();
+
+        //        if (responce.Any())
+        //        {
+        //            foreach (var slot in responce)
+        //            {
+        //                if (slot.IsActive && !slot.IsDeleted)
+        //                {
+        //                    slot.IsDeleted = true;
+        //                    slot.IsActive = false;
+        //                    slot.UpdatedOn = DateTime.Now;
+        //                }
+        //            }
+
+        //            _dbContext.VehicleRegistrationTimeSlots.UpdateRange(responce);
+        //            await _dbContext.SaveChangesAsync();
+
+        //        }
+
+        //        //if (DateTime.TryParse(input.dates, out DateTime parsedDate))
+        //        //{
+        //         savemutliplevehciledates(newVehicle.Id, input.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
+        //        //}
+        //        //else
+        //        //{
+        //        //   // savemutliplevehciledates(newVehicle.Id, input.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
+
+        //        //    savemutliplevehciletime(newVehicle.Id, newVehicle.StartDate, newVehicle.EndDate, 0);
+        //        //}
+        //    }
+
+        //    return new AddVehicleResponse { Message = "Vehicles updated and new records inserted successfully" };
+        //}
 
 
 

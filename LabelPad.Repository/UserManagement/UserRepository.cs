@@ -282,6 +282,26 @@ namespace LabelPad.Repository.UserManagement
                                     _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
                                     _dbContext.SaveChanges();
                                 }
+
+                                //added code for VehicleRegistration table on 21/03/24
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = true;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VehicleRegistrations.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+
                             }
                             if (myDeserializedClass.xml.status_code == "25" && myDeserializedClass.xml.error == "0")
                             {
@@ -302,6 +322,23 @@ namespace LabelPad.Repository.UserManagement
                                     //});
 
                                     _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
+                                    _dbContext.SaveChanges();
+                                }
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots.IsSentToZatPark = false;
+                                    slots.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots.Request = requeststr;
+                                    slots.Response = JsonValue;
+                                    slots.SentToZatparkDateTime = DateTime.Now;
+                                    slots.UpdatedOn = DateTime.Now;
+                                    slots.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VehicleRegistrations.UpdateRange(slots1);
                                     _dbContext.SaveChanges();
                                 }
                             }
@@ -326,7 +363,23 @@ namespace LabelPad.Repository.UserManagement
                                     _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
                                     _dbContext.SaveChanges();
                                 }
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots.IsSentToZatPark = false;
+                                    slots.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots.Request = requeststr;
+                                    slots.Response = JsonValue;
+                                    slots.SentToZatparkDateTime = DateTime.Now;
+                                    slots.UpdatedOn = DateTime.Now;
+                                    slots.UpdatedBy = 1;
+                                    //});
 
+                                    _dbContext.VehicleRegistrations.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
                             }
                         }
 
