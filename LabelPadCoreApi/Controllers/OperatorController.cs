@@ -53,7 +53,7 @@ namespace LabelPadCoreApi.Controllers
         }
         [HttpPost("CreateOperator")]
         public async Task<IActionResult> CreateOperator(
-   [FromBody] OperatorDetails operatorDetail, // Use [FromForm] instead of [FromBody]
+   [FromForm] OperatorDetails operatorDetail, // Use [FromForm] instead of [FromBody]
    IFormFile Profile, // File input for profile image
    IFormFile HelpImage // File input for help image
 )
@@ -106,7 +106,7 @@ namespace LabelPadCoreApi.Controllers
         }
         [HttpPut("UpdateOperators")]
         public async Task<IActionResult> UpdateOperators(
-  [FromBody] OperatorDetails operatorDetail, // Use [FromForm] instead of [FromBody]
+  [FromForm] OperatorDetails operatorDetail, // Use [FromForm] instead of [FromBody]
   IFormFile Profiles, // File input for profile image
   IFormFile HelpImages // File input for help image
 )
