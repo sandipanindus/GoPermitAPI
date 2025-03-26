@@ -2483,7 +2483,7 @@ namespace LabelPadCoreApi.Controllers
                     myString = readFile;
                     //  string dt = DateTime.Now.ToString("MM.dd.yyyy");
                     //  myString = myString.Replace("%{#{Datetime}#}%", dt);
-                    myString = myString.Replace("%{#{Name}#}%", user.FirstName + " " + user.LastName);
+                    myString = myString.Replace("%{#{Name}#}%", user.FirstName );
 
                     string body = myString;
                     bool key = await _userRepository.SendEmailAsync(user.Email, user.FirstName, "Welcome to Go Permit !", body, "GOPERMIT_Welcome");
