@@ -933,6 +933,7 @@ namespace LabelPad.Repository.TenantManagement
 
                 if (existingRecord != null)
                 {
+                    existingRecord.VRM = input.vrm;
                     existingRecord.StartDate = Convert.ToDateTime(input.StartDate);
                     existingRecord.EndDate = Convert.ToDateTime(input.EndDate);
                     existingRecord.UpdatedOn = DateTime.Now;
@@ -1121,7 +1122,7 @@ namespace LabelPad.Repository.TenantManagement
                 //if (DateTime.TryParse(input.dates, out DateTime parsedDate))
                 //{
                 savemutliplevehciledates(newVehicle.Id, input.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
-                _userRepository.whitelistvehicle(Convert.ToInt32(user.SiteId), objinput[0].vrm);
+              //  _userRepository.whitelistvehicle(Convert.ToInt32(user.SiteId), objinput[0].vrm);
 
                 //}
                 //else

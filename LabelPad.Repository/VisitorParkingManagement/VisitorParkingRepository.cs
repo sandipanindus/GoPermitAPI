@@ -38,7 +38,7 @@ namespace LabelPad.Repository.VisitorParkingManagement
         {
             try
             {
-                var visitor = _dbContext.VisitorParkingTemps.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == Id).FirstOrDefault();
+                var visitor = _dbContext.VisitorParkingTemps.Where(x => x.IsActive == false && x.IsDeleted == false && x.Id == Id).FirstOrDefault();
                 if (visitor != null)
                 {
                     //var visitorvehicle = _dbContext.VisitorParkingVehicleDetails.Where(x => x.IsActive == true && x.IsDeleted == false && x.VisitorParkingId == Id).ToList();
@@ -55,8 +55,24 @@ namespace LabelPad.Repository.VisitorParkingManagement
                     visitor.UpdatedOn = DateTime.Now;
                     _dbContext.VisitorParkingTemps.Update(visitor);
                     _dbContext.SaveChanges();
+                    return new { Message = "Deleted Successfully" };
+                }
+                else if(visitor == null)
+                {
+                 var visitor1 = _dbContext.VisitorParkings.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == Id).FirstOrDefault();
+                    if(visitor1!= null)
+                    {
+                        visitor1.IsActive = false;
+                        visitor1.IsDeleted = true;
+                        visitor1.UpdatedBy = visitor1.RegisterUserId;
+                        visitor1.UpdatedOn = DateTime.Now;
+                        _dbContext.VisitorParkings.Update(visitor1);
+                        _dbContext.SaveChanges();
+                        return new { Message = "Deleted Successfully" };
+                    }
                 }
                 return new { Message = "Deleted Successfully" };
+
             }
             catch
             {

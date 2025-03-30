@@ -877,23 +877,47 @@ namespace LabelPad.Repository.UserManagement
             
             return new { Message = "User saved successfully" };
         }
+
         //public async Task<dynamic> DeleteUser(int Id)
         //{
-        //    RegisterUser user = await _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == Id).FirstOrDefaultAsync();
+        //    RegisterUser user = await _dbContext.RegisterUsers
+        //        .Where(x => x.IsDeleted == false && x.Id == Id)
+        //        .FirstOrDefaultAsync();
+
         //    if (user != null)
         //    {
         //        user.IsDeleted = true;
         //        user.IsActive = false;
         //        user.UpdatedOn = DateTime.Now;
+
         //        _dbContext.RegisterUsers.Update(user);
         //        await _dbContext.SaveChangesAsync();
-        //        return new { Message = "User deleted successfully" };
+        //        var parkingBayRecords = await _dbContext.ParkingBayNos
+        //            .Where(x => x.RegisterUserId == Id || x.UpdatedBy == Id)
+        //            .ToListAsync();
+
+        //        foreach (var record in parkingBayRecords)
+        //        {
+        //            if (record.RegisterUserId == Id)
+        //                record.RegisterUserId = 0;
+        //                 record.Status = false;
+        //            if (record.UpdatedBy == Id)
+        //                record.UpdatedBy = 0;
+        //                 record.Status = false;
+        //            record.UpdatedOn = DateTime.Now;
+        //        }
+
+        //        _dbContext.ParkingBayNos.UpdateRange(parkingBayRecords);
+        //        await _dbContext.SaveChangesAsync();
+
+        //        return new { Message = "User deleted successfully and ParkingBayNos updated" };
         //    }
         //    else
         //    {
         //        return new { Message = "No data found" };
         //    }
         //}
+
         public async Task<dynamic> DeleteUser(int Id)
         {
             RegisterUser user = await _dbContext.RegisterUsers
@@ -908,6 +932,8 @@ namespace LabelPad.Repository.UserManagement
 
                 _dbContext.RegisterUsers.Update(user);
                 await _dbContext.SaveChangesAsync();
+
+                // *Update ParkingBayNos Table*
                 var parkingBayRecords = await _dbContext.ParkingBayNos
                     .Where(x => x.RegisterUserId == Id || x.UpdatedBy == Id)
                     .ToListAsync();
@@ -916,17 +942,36 @@ namespace LabelPad.Repository.UserManagement
                 {
                     if (record.RegisterUserId == Id)
                         record.RegisterUserId = 0;
-                         record.Status = false;
+
                     if (record.UpdatedBy == Id)
                         record.UpdatedBy = 0;
-                         record.Status = false;
+
+                    record.Status = false;
                     record.UpdatedOn = DateTime.Now;
                 }
 
                 _dbContext.ParkingBayNos.UpdateRange(parkingBayRecords);
                 await _dbContext.SaveChangesAsync();
 
-                return new { Message = "User deleted successfully and ParkingBayNos updated" };
+                var vehicleRecords = await _dbContext.VehicleRegistrations
+                    .Where(x => x.RegisterUserId == Id || x.UpdatedBy == Id)
+                    .ToListAsync();
+
+                foreach (var record in vehicleRecords)
+                {
+                    if (record.RegisterUserId == Id)
+                        record.RegisterUserId = 0;
+
+                    if (record.UpdatedBy == Id)
+                        record.UpdatedBy = 0;
+
+                    record.UpdatedOn = DateTime.Now;
+                }
+
+                _dbContext.VehicleRegistrations.UpdateRange(vehicleRecords);
+                await _dbContext.SaveChangesAsync();
+
+                return new { Message = "User deleted successfully and related records updated" };
             }
             else
             {
@@ -943,7 +988,7 @@ namespace LabelPad.Repository.UserManagement
         }
         public bool GetExistsUser(AddUserAc addUserAc)
         {
-            RegisterUser user = _dbContext.RegisterUsers.FirstOrDefault(x => (x.Email == addUserAc.Email || x.MobileNumber == addUserAc.ContactNumber) && x.IsDeleted == false && x.RoleId == addUserAc.RoleId);
+            RegisterUser user = _dbContext.RegisterUsers.FirstOrDefault(x => (x.Email == addUserAc.Email || x.MobileNumber == addUserAc.ContactNumber) && x.IsDeleted == false);
             return (user != null);
 
         }
@@ -1399,6 +1444,73 @@ namespace LabelPad.Repository.UserManagement
             
 
             }
+
+            else if(RoleId == 17)
+            {
+                if (SiteId == 0)
+                {
+                    var operatorId = _dbContext.RegisterUsers
+                    .Where(x => x.IsDeleted == false && x.Id == LoginId && x.IsOperator == true)
+                    .Select(x => x.OperatorId)
+                    .FirstOrDefault();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.IsOperator == true).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+                                 where l.IsDeleted == false && l.RoleId == RoleId && l.RoleId != 2 && operatorId == l.OperatorId && l.IsOperator == true
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? "NA" : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                }
+                else
+                {
+                    var operatorId = _dbContext.RegisterUsers
+                   .Where(x => x.IsDeleted == false && x.Id == LoginId && x.IsOperator == true)
+                   .Select(x => x.OperatorId)
+                   .FirstOrDefault();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.SiteId == SiteId && x.IsOperator == true).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+                                 join s in _dbContext.Sites on l.SiteId equals s.Id
+                                 where l.IsDeleted == false && l.RoleId == RoleId && s.Id == SiteId && l.RoleId != 2 && operatorId == l.OperatorId && l.IsOperator == true
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     s.SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                }
+            }
             else
             {
                 if (SiteId == 0)
@@ -1602,12 +1714,16 @@ namespace LabelPad.Repository.UserManagement
             {
                 if (SiteId == 0)
                 {
+                    var operatorId = _dbContext.RegisterUsers
+                    .Where(x => x.IsDeleted == false && x.Id == LoginId && x.IsOperator == true)
+                    .Select(x => x.OperatorId)
+                    .FirstOrDefault();
                     int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.IsOperator == true).Count();
                     double totalpa = (double)totalitems / (double)PageSize;
                     double totalpage = Math.Round(totalpa);
                     var users = (from l in _dbContext.RegisterUsers
                                  join r in _dbContext.Roles on l.RoleId equals r.Id
-                                 where l.IsDeleted == false && l.RoleId == RoleId && l.RoleId != 2 && l.IsOperator == true
+                                 where l.IsDeleted == false && l.RoleId == RoleId && l.RoleId != 2 && operatorId == l.OperatorId && l.IsOperator == true
                                  select new
                                  {
                                      l.Id,
@@ -1629,13 +1745,17 @@ namespace LabelPad.Repository.UserManagement
                 }
                 else
                 {
+                    var operatorId = _dbContext.RegisterUsers
+                   .Where(x => x.IsDeleted == false && x.Id == LoginId && x.IsOperator == true)
+                   .Select(x => x.OperatorId)
+                   .FirstOrDefault();
                     int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.SiteId == SiteId && x.IsOperator == true).Count();
                     double totalpa = (double)totalitems / (double)PageSize;
                     double totalpage = Math.Round(totalpa);
                     var users = (from l in _dbContext.RegisterUsers
                                  join r in _dbContext.Roles on l.RoleId equals r.Id
                                  join s in _dbContext.Sites on l.SiteId equals s.Id
-                                 where l.IsDeleted == false && l.RoleId == RoleId && s.Id == SiteId && l.RoleId != 2 && l.IsOperator == true
+                                 where l.IsDeleted == false && l.RoleId == RoleId && s.Id == SiteId && l.RoleId != 2 && operatorId == l.OperatorId && l.IsOperator == true
                                  select new
                                  {
                                      l.Id,

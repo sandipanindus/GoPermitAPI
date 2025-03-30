@@ -334,7 +334,7 @@ namespace LabelPadCoreApi.Controllers
                     myString = myString.Replace("%{#{PropertyName}#}%", sitename);
                     // myString = myString.Replace("%{#{BayNo}#}%", bayid);
                     string body = myString;
-                    bool key = await SendEmail(objdata.Email, objdata.Name, "Thank you for booking slot", body, tenantemail, objdata.cctome, "GOPERMIT_Slot Booking");
+                    bool key = await SendEmail(objdata.Email, objdata.Name, "Verify and Confirm Your Booking Details ", body, tenantemail, objdata.cctome, "GOPERMIT_Slot Booking");
                     string myString1 = "";
 
                     if (objdata.cctome == true)
@@ -358,7 +358,7 @@ namespace LabelPadCoreApi.Controllers
                         myString1 = myString1.Replace("%{#{PropertyName}#}%", sitename);
 
                         string bodycc = myString1;
-                        key = await SendEmail(objdata.Email, objdata.Name, "Thank you for booking slot", bodycc, tenantemail, objdata.cctome, "GOPERMIT_Slot Booking");
+                        key = await SendEmail(objdata.Email, objdata.Name, "Verify and Confirm Your Booking Details ", bodycc, tenantemail, objdata.cctome, "GOPERMIT_Slot Booking");
 
                     }
 
@@ -2309,6 +2309,24 @@ namespace LabelPadCoreApi.Controllers
             {
                 //AppLogs.InfoLogs("GetUserById Method was started,Controller:Admin");
                 var support = await _siteRepository.CloseTicket(Id);
+                var support1 = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == Id).FirstOrDefault();
+                var userId = support1.RegisterUserId;
+                var user = _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == userId).FirstOrDefault();
+                var folderName = "";
+                folderName = Path.Combine("EmailHtml", "CloseTicket.html");
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                StreamReader reader = new StreamReader(filePath);
+
+                //string subject = acountconfirm;
+                string readFile = reader.ReadToEnd();
+                string myString = "";
+                myString = readFile;
+                //  string dt = DateTime.Now.ToString("MM.dd.yyyy");
+                //  myString = myString.Replace("%{#{Datetime}#}%", dt);
+                myString = myString.Replace("%{#{Name}#}%", user.FirstName);
+
+                string body = myString;
+                bool key = await _userRepository.SendEmailAsync(user.Email, user.FirstName, "Update on Your Support Ticket ", body, "Support Ticket_Status");
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = support });
             }
             catch (Exception ex)
