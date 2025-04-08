@@ -35,6 +35,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using Azure.Core;
 using MailKit.Security;
 using MimeKit;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LabelPadCoreApi.Controllers
 {
@@ -252,6 +253,84 @@ namespace LabelPadCoreApi.Controllers
             {
                 //AppLogs.InfoLogs("GetSites Method was started,Controller:Admin");
                 var visitors = await _visitorParkingRepository.UpdateVisitorSlot(objdata);
+                //var result = _dbContext.VisitorParkingTemps
+                //      .OrderByDescending(v => v.Id)
+                //      .ToList();
+
+                var result = await (from v in _dbContext.VisitorParkingTemps
+                                    where v.Id == objdata.Id
+                                    select v).FirstOrDefaultAsync();
+
+                string Firstname = result.Name;
+                string Surname = result.Surname;
+                string Email = result.Email;
+                string Duration = result.Duration;
+                string SessionUnit = result.SessionUnit;
+                int tenantId = result.RegisterUserId;
+                
+                var User = await (from u in _dbContext.RegisterUsers
+                                  where u.Id == tenantId
+                                  select u).FirstOrDefaultAsync();
+
+                string tenatEmail = User.Email;
+
+                if (visitors != null)
+                {
+
+                    var folderName = Path.Combine("EmailHtml", "DriverConfirm.html");
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                    string bayid = "";
+                    //var baynos = _dbContext.VisitorBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.SiteId == Convert.ToInt32(objdata.SiteId) && x.Id == objdata.VisitorBayNoId).FirstOrDefault();
+                    //if (baynos != null)
+                    //{
+                    //    bayid = baynos.BayName;
+                    //}
+                    StreamReader reader = new StreamReader(filePath);
+                    //string[] Date = objdata.Date.Split('T');
+                    //DateTime newdate = Convert.ToDateTime(Date[0]);
+                    string readFile = reader.ReadToEnd();
+                    string myString = "";
+                    myString = readFile;
+
+
+                    string tenantemail = "";
+                    //var sites = _dbContext.Sites.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == objdata.SiteId).FirstOrDefault();
+                    //var user = _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == objdata.TenantId).FirstOrDefault();
+                    //if (user != null)
+                    //{
+                    //    tenantemail = user.Email;
+
+                    //}
+                    // myString = myString.Replace("%{#{BayNo}#}%", bayid);
+                    string body = myString;
+                    bool key = await _userRepository.SendEmailAsync(Email, Firstname, "Confirmation Complete ", body, "GOPERMIT_Slot Booking Confirmation");
+
+                    string myString1 = "";
+                    
+                        var folderName1 = Path.Combine("EmailHtml", "TenantConfirm.html");
+                        var filePath1 = Path.Combine(Directory.GetCurrentDirectory(), folderName1);
+                        StreamReader reader1 = new StreamReader(filePath1);
+                        string readFile1 = reader1.ReadToEnd();
+
+
+                        myString1 = readFile1;
+                        myString1 = myString1.Replace("%{#{Firstname}#}%", Firstname);
+                        myString1 = myString1.Replace("%{#{Surname}#}%", Surname);
+                        myString1 = myString1.Replace("%{#{Email}#}%", Email);
+                        myString1 = myString1.Replace("%{#{Duration}#}%", Duration + " " + SessionUnit);
+
+                        string bodyTenant = myString1;
+                        key = await _userRepository.SendEmailAsync(tenatEmail, Firstname, "Confirmation Complete ", bodyTenant, "GOPERMIT_Slot Booking Confirmation");
+
+                    
+
+
+
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = objdata });
+                }
+
+
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = visitors });
             }
             catch (Exception ex)
