@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -164,9 +165,7 @@ namespace LabelPad.Repository.TenantManagement
 
         }
 
-
-
-        public async Task<dynamic> getvehcilecountsbydates(string tenantid, string bayno, string dates)
+        public async Task<dynamic> getvehcilelistcountsbydates(string tenantid, string bayno, string dates)
         {
             // var vehicles = await _dbContext.VehicleRegistrations.Where(x=>x.IsActive==true && x.IsDeleted==false && x.RegisterUserId==Convert.ToInt32(tenantid)).ToListAsync();
             var vehicles = (from v in _dbContext.VehicleRegistrations
@@ -190,6 +189,36 @@ namespace LabelPad.Repository.TenantManagement
                                 //selectedddates = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.IsActive == true && x.IsDeleted == false && x.VehicleRegistrationId == v.Id).ToList(),
 
                                 endDate = pb.ToDate,
+                            }).ToList();
+
+
+
+
+            return vehicles;
+        }
+
+        public async Task<dynamic> getvehcilecountsbydates(string tenantid, string bayno, string dates)
+        {
+            // var vehicles = await _dbContext.VehicleRegistrations.Where(x=>x.IsActive==true && x.IsDeleted==false && x.RegisterUserId==Convert.ToInt32(tenantid)).ToListAsync();
+            var vehicles = (from v in _dbContext.VehicleRegistrations
+                            where v.RegisterUserId == Convert.ToInt32(tenantid) && v.ParkingBayNo == Convert.ToInt32(bayno)
+                            && v.EndDate.Value.Date == (Convert.ToDateTime(dates).Date) && v.IsActive == true && v.IsDeleted == false
+                            select new
+                            {
+
+                                id = v.Id,
+                                vrm = v.VRM,
+                                Make = v.Make,
+                                Model = v.Model,
+                                // parkingBayNo = pb.BayName,
+                                startDate = v.StartDate,
+                                bayconfig = v.ConfigNo,
+                                // issavecount = v.IsSaveCount,
+                                configno = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == Convert.ToInt32(tenantid) && x.ParkingBayNo == Convert.ToInt32(bayno)).Max(x => x.ConfigNo),
+                                // maxissavecount = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == Convert.ToInt32(tenantid) && x.ParkingBayNo == Convert.ToInt32(bayno)).Max(x => x.IsSaveCount),
+                                //selectedddates = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.IsActive == true && x.IsDeleted == false && x.VehicleRegistrationId == v.Id).ToList(),
+
+                                endDate = v.EndDate,
                             }).ToList();
 
 
@@ -998,28 +1027,100 @@ namespace LabelPad.Repository.TenantManagement
 
 
 
+            //foreach (var input in objinput)
+            //{
+            //    int bayno = Convert.ToInt32(input.bayno);
+            //    DateTime newStartDate = Convert.ToDateTime(input.StartDate);
+            //    DateTime newEndDate = Convert.ToDateTime(input.EndDate);
+
+            //    // Strict Overlap Check
+            //    var hasOverlap = _dbContext.VehicleRegistrations
+            //     .Any(v => v.ParkingBayNo == bayno &&
+            //      v.IsActive &&
+            //     !v.IsDeleted &&
+            //  (
+            //      ((v.StartDate.HasValue && v.StartDate.Value.TimeOfDay != TimeSpan.Zero) ||
+            //       (v.EndDate.HasValue && v.EndDate.Value.TimeOfDay != TimeSpan.Zero)) && // Only check records with time
+            //      (
+            //          (newStartDate >= v.StartDate && newStartDate < v.EndDate) ||  // Starts inside existing range
+            //          (newEndDate > v.StartDate && newEndDate <= v.EndDate) ||      // Ends inside existing range
+            //          (newStartDate <= v.StartDate && newEndDate >= v.EndDate)      // Covers the entire existing range
+            //      )
+            //  ));
+
+            //    if (hasOverlap)
+            //    {
+            //        return new AddVehicleResponse { Message = "Range Already Exist" };
+            //    }
+            //    else
+            //    {
+            //        int SelBayno = Convert.ToInt32(objinput[0].bayno);
+            //        var resp = _dbContext.VehicleRegistrations
+            //  .Where(v => v.ParkingBayNo == SelBayno)
+            //  .ToList();
+
+            //        if (resp.Any())
+            //        {
+            //            foreach (var slot in resp)
+            //            {
+            //                // Check if both StartDate and EndDate exist and have time as 00:00
+            //                bool isMidnight = slot.StartDate.HasValue && slot.StartDate.Value.TimeOfDay == TimeSpan.Zero &&
+            //                                  slot.EndDate.HasValue && slot.EndDate.Value.TimeOfDay == TimeSpan.Zero;
+
+            //                if (slot.IsActive && !slot.IsDeleted && isMidnight)
+            //                {
+            //                    slot.IsDeleted = true;
+            //                    slot.IsActive = false;
+            //                    slot.UpdatedOn = DateTime.Now;
+            //                }
+            //            }
+
+            //            _dbContext.VehicleRegistrations.UpdateRange(resp);
+            //            await _dbContext.SaveChangesAsync();
+            //        }
+            //    }
+
+            //}
+
             foreach (var input in objinput)
             {
                 int bayno = Convert.ToInt32(input.bayno);
-                DateTime newStartDate = Convert.ToDateTime(input.StartDate);
-                DateTime newEndDate = Convert.ToDateTime(input.EndDate);
 
-                // Strict Overlap Check
-                var hasOverlap = _dbContext.VehicleRegistrations
-                 .Any(v => v.ParkingBayNo == bayno &&
-                  v.IsActive &&
-                 !v.IsDeleted &&
-              (
-                  ((v.StartDate.HasValue && v.StartDate.Value.TimeOfDay != TimeSpan.Zero) ||
-                   (v.EndDate.HasValue && v.EndDate.Value.TimeOfDay != TimeSpan.Zero)) && // Only check records with time
-                  (
-                      (newStartDate >= v.StartDate && newStartDate < v.EndDate) ||  // Starts inside existing range
-                      (newEndDate > v.StartDate && newEndDate <= v.EndDate) ||      // Ends inside existing range
-                      (newStartDate <= v.StartDate && newEndDate >= v.EndDate)      // Covers the entire existing range
-                  )
-              ));
+                // Get vehicle registration IDs for the given bayno
+                var vehicleIds = _dbContext.VehicleRegistrations
+                    .Where(v => v.ParkingBayNo == bayno && v.IsActive && !v.IsDeleted)
+                    .Select(v => v.Id)
+                    .ToList();
 
-                if (hasOverlap)
+                if (!vehicleIds.Any())
+                {
+                    Console.WriteLine($"No active vehicle registrations found for bayno {bayno}");
+                    continue;
+                }
+
+                // Convert input dates into DateTime list
+                var inputDates = input.dates
+                    .Split(',')
+                    .Select(dateStr =>
+                    {
+                        // Extract only the first portion of the date before "GMT"
+                        string cleanDateStr = dateStr.Split(" GMT")[0];
+
+                        // Define the expected format (matches 'Mon Apr 07 2025 00:00:00')
+                        return DateTime.ParseExact(cleanDateStr, "ddd MMM dd yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date;
+                    })
+                    .ToList();
+
+                // Fetch existing time slot dates where vehicleRegistrationId is present in vehicleIds
+                var existingDates = _dbContext.VehicleRegistrationTimeSlots
+                   .Where(t => vehicleIds.Contains(t.VehicleRegistrationId))
+                   .Select(t => t.FromDate.Date)
+                   .ToList();
+
+                // Check if any one input date is already present in the database
+                bool anyDateExists = inputDates.Any(d => existingDates.Contains(d));
+
+                if (anyDateExists)
                 {
                     return new AddVehicleResponse { Message = "Range Already Exist" };
                 }
@@ -1050,9 +1151,7 @@ namespace LabelPad.Repository.TenantManagement
                         await _dbContext.SaveChangesAsync();
                     }
                 }
-
             }
-
 
 
             foreach (var input in objinput)

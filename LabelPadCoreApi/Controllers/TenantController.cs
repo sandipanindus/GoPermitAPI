@@ -724,7 +724,24 @@ namespace LabelPadCoreApi.Controllers
             try
             {
                 //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
-                var vehicles = await _tenantRepository.getvehcilecountsbydates(tenantid, bayno, date);
+                var vehicles = await _tenantRepository.getvehcilelistcountsbydates(tenantid, bayno, date);
+
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = vehicles });
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+
+        [HttpGet("getvehcilelistcountsbydates")]
+        public async Task<IActionResult> getvehcilelistcountsbydates(string tenantid, string bayno, string date)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
+                var vehicles = await _tenantRepository.getvehcilelistcountsbydates(tenantid, bayno, date);
 
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = vehicles });
             }

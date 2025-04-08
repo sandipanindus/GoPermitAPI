@@ -21,8 +21,8 @@ namespace LabelPad.Repository.TenantManagement
         Task<dynamic> Getvehiclecountsdetails(string tenantid,string bayno);
         Task<dynamic> GetvehiclecountsdetailsById(string tenantid, string bayno, int Id);
         Task<dynamic> getvehcilecountsbydates(string tenantid,string bayno,string dates);
-
-         Task<dynamic> GetSupportList(int TenantId);
+        Task<dynamic> getvehcilelistcountsbydates(string tenantid, string bayno, string dates);
+        Task<dynamic> GetSupportList(int TenantId);
         Task<dynamic> GetSupportById(int Id, int TicketId, int TenantId);
         Task<dynamic> ReplySupport(AddSupportAc objinput);
 
