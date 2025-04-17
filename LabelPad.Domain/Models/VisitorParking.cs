@@ -32,7 +32,11 @@ namespace LabelPad.Domain.Models
         public DateTime EndDate { get; set; }
         public string StartTime { get; set; }
         public string EndTime { get; set; }
-
+        public bool IsSentToZatPark { get; set; }
+        public string Request { get; set; }
+        public string Response { get; set; }
+        public DateTime SentToZatparkDateTime { get; set; }
+        public string ZatparkResponse { get; set; }
         public bool CCtome { get; set; }
     }
 }

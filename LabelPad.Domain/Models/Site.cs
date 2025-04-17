@@ -45,8 +45,7 @@ namespace LabelPad.Domain.Models
         public bool ManageParkingAvailble { get; set; }
         public bool visitorParkingAvailble { get; set; }
         public bool Zatparklogs24hrs { get; set; }
-
-
+        public string APIKey { get; set; }
         public ICollection<BayConfig> BayConfigs { get; set; }
         public ICollection<ParkingBay> ParkingBays { get; set; }
         public ICollection<VisitorBay> VisitorBays { get; set; }

@@ -1,6 +1,7 @@
 ﻿using LabelPad.Domain.ApplicationClasses;
 using LabelPad.Domain.Data;
 using LabelPad.Domain.Models;
+using LabelPad.Repository.UserManagement;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using Microsoft.Extensions.Configuration;
@@ -19,10 +20,12 @@ namespace LabelPad.Repository.VisitorParkingManagement
     {
         private readonly LabelPadDbContext _dbContext;
         private readonly IConfiguration _configuration;
-        public VisitorParkingRepository(LabelPadDbContext dbContext, IConfiguration configuration)
+        private readonly IUserRepository _userRepository;
+        public VisitorParkingRepository(LabelPadDbContext dbContext, IConfiguration configuration, IUserRepository userRepository)
         {
             _dbContext = dbContext;
             _configuration = configuration;
+            _userRepository = userRepository;
         }
         public async Task<dynamic> GetVisitorBayNos(int SiteId)
         {
@@ -183,6 +186,8 @@ namespace LabelPad.Repository.VisitorParkingManagement
                 parking.CCtome = visitor.CCtome;
                 _dbContext.VisitorParkings.Add(parking);
                 _dbContext.SaveChanges();
+                 _userRepository.whitelistvehicleforvisitor(Convert.ToInt32(visitor.SiteId), obj.vrm);
+
             }
             return new { Message = "Visitor slot updated" };
         }
@@ -279,6 +284,8 @@ namespace LabelPad.Repository.VisitorParkingManagement
                 visitor.UpdatedOn = DateTime.Now;
                 _dbContext.VisitorParkings.Update(visitor);
                 _dbContext.SaveChanges();
+              
+
 
             }
             return new { Message = "Visitor parking updated successfully" };

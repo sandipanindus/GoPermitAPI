@@ -32,6 +32,7 @@ namespace LabelPad.Repository.UserManagement
         Task<dynamic> AddTenant(UpdateRegisterUserAc model);
         //void Cancelwhitelistvehicle(int siteId, string vrm);
         void whitelistvehicle(int siteId, string vrm);
+        void whitelistvehicleforvisitor(int siteId, string vrm);
         bool GetTenant(UpdateRegisterUserAc addRegister);
        Task<dynamic> GetSearchUsers(int PageNo, int PageSize, string FirstName, string LastName, string Email,string SiteName, int LoginId, int RoleId, int SiteId);
         Task<dynamic> GetSearchTenants(int PageNo, int PageSize, string FirstName, string LastName, string Email, string MobileNumber, string SiteName, int SiteId, string VRM);

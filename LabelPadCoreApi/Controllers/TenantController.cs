@@ -724,7 +724,7 @@ namespace LabelPadCoreApi.Controllers
             try
             {
                 //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
-                var vehicles = await _tenantRepository.getvehcilelistcountsbydates(tenantid, bayno, date);
+                var vehicles = await _tenantRepository.getvehcilecountsbydates(tenantid, bayno, date);
 
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = vehicles });
             }

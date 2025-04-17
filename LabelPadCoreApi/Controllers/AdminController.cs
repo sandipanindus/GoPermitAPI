@@ -437,7 +437,7 @@ namespace LabelPadCoreApi.Controllers
                         myString1 = myString1.Replace("%{#{PropertyName}#}%", sitename);
 
                         string bodycc = myString1;
-                        key = await SendEmail(objdata.Email, objdata.Name, "Verify and Confirm Your Booking Details ", bodycc, tenantemail, objdata.cctome, "GOPERMIT_Slot Booking");
+                        key = await SendEmail(tenantemail, objdata.Name, "Verify and Confirm Your Booking Details ", bodycc, tenantemail, objdata.cctome, "GOPERMIT_Slot Booking");
 
                     }
 

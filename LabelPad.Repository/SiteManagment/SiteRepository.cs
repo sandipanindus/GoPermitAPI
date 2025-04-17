@@ -1009,6 +1009,7 @@ namespace LabelPad.Repository.SiteManagment
             site.IndustryId = objsite.IndustryId;
             site.OperatorId = objsite.OperatorId;
             site.EnforcementService = objsite.EnforcementService;
+            site.APIKey = objsite.APIKey;
             site.VisitorSectionsOrFloors = Convert.ToInt32(objsite.VSection);
             _dbContext.Sites.Add(site);
             _dbContext.SaveChanges();
@@ -1250,6 +1251,7 @@ namespace LabelPad.Repository.SiteManagment
                             s.IndustryId,
                             s.OperatorId,
                             s.EnforcementService,
+                            s.APIKey,
                             bays = (from p in _dbContext.ParkingBays
                                     where p.SiteId == s.Id && p.IsActive == true && p.IsDeleted == false
                                     select new
@@ -1851,6 +1853,7 @@ namespace LabelPad.Repository.SiteManagment
                 site.IndustryId = objsite.IndustryId;
                 site.UpdatedOn = DateTime.Now;
                 site.EnforcementService = objsite.EnforcementService;
+                site.APIKey = objsite.APIKey;
                 if (objsite.ParkingBays.Count != 0)
                 {
                     site.ParkingBaySeperator = objsite.Seperator;

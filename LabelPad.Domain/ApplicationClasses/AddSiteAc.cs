@@ -41,6 +41,7 @@ namespace LabelPad.Domain.ApplicationClasses
         public List<ParkingBays> ParkingBays { get; set; }
         public List<VisitorBays> VisitorBays { get; set; }
         public List<VisitorSession> VisitorSessions { get; set; }
+        public string APIKey { get; set; }
     }
     public class ParkingBays
     {

@@ -158,8 +158,8 @@ namespace LabelPad.Repository.UserManagement
         {
             string apikey = string.Empty; string apiurl = string.Empty;
 
-            apikey = _configuration["ZatparkApiKey"];
-            apiurl = _configuration["ZatparkUrl"];
+           // apikey = _configuration["ZatparkApiKey"];
+
             //Common.InfoLogs("Config files read");
             string referenceno = string.Empty;
             string referencenew = string.Empty;
@@ -168,6 +168,8 @@ namespace LabelPad.Repository.UserManagement
             string enddate = string.Empty;
             //Common.InfoLogs("Before fetching sites");
             var sites = _dbContext.Sites.Where(x => x.Id == siteId && x.IsActive == true && x.IsDeleted == false).FirstOrDefault(); //Util.GetSites();
+            apikey = sites.APIKey;
+            apiurl = _configuration["ZatparkUrl"];
             // Common.InfoLogs("site Fetched");
             if (sites != null)
             {
@@ -342,7 +344,7 @@ namespace LabelPad.Repository.UserManagement
                                     _dbContext.SaveChanges();
                                 }
                             }
-                            if (myDeserializedClass.xml.status_code == "1" && myDeserializedClass.xml.error == "1")
+                            if (myDeserializedClass.xml.status_code == "1" || myDeserializedClass.xml.error == "1")
                             {
 
                                 //DataSet dataset = Util.UpdateVehicleDetails(list);
@@ -363,18 +365,18 @@ namespace LabelPad.Repository.UserManagement
                                     _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
                                     _dbContext.SaveChanges();
                                 }
-                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
                                 if (slots1 != null)
                                 {
                                     //slots.ForEach(x =>
                                     //{
-                                    slots.IsSentToZatPark = false;
-                                    slots.ZatparkResponse = myDeserializedClass.xml.message;
-                                    slots.Request = requeststr;
-                                    slots.Response = JsonValue;
-                                    slots.SentToZatparkDateTime = DateTime.Now;
-                                    slots.UpdatedOn = DateTime.Now;
-                                    slots.UpdatedBy = 1;
+                                    slots1.IsSentToZatPark = false;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
                                     //});
 
                                     _dbContext.VehicleRegistrations.UpdateRange(slots1);
@@ -391,6 +393,192 @@ namespace LabelPad.Repository.UserManagement
             }
         }
 
+
+        public void whitelistvehicleforvisitor(int siteId, string vrm)
+        {
+            string apikey = string.Empty; string apiurl = string.Empty;
+
+            // apikey = _configuration["ZatparkApiKey"];
+
+            //Common.InfoLogs("Config files read");
+            string referenceno = string.Empty;
+            string referencenew = string.Empty;
+            string sitecode = string.Empty;
+            string startdate = string.Empty;
+            string enddate = string.Empty;
+            //Common.InfoLogs("Before fetching sites");
+            var sites = _dbContext.Sites.Where(x => x.Id == siteId && x.IsActive == true && x.IsDeleted == false).FirstOrDefault(); //Util.GetSites();
+            apikey = sites.APIKey;
+            apiurl = _configuration["ZatparkUrl"];
+            // Common.InfoLogs("site Fetched");
+            if (sites != null)
+            {
+                bool zatparkhours = sites.Zatparklogs24hrs;
+                //ArrayList array = new ArrayList();
+                //array.Add(siteId);
+                //array.Add(1);
+                var vehicles = (from v in _dbContext.VisitorParkings
+                                join u in _dbContext.RegisterUsers on v.RegisterUserId equals u.Id
+                                join s in _dbContext.Sites on u.SiteId equals s.Id
+                                where  s.Id == siteId && v.VRMNumber == vrm 
+                                //where c.RegisterUserId == Id && c.IsActive == true && c.IsDeleted == false
+                                select new
+                                {
+                                    v.Id,
+                                    v.StartDate,
+                                    v.EndDate,
+                                    VFromDate = v.StartDate.Date.Add(TimeSpan.Parse(v.StartTime)),
+                                    VToDate = v.EndDate.Date.Add(TimeSpan.Parse(v.EndTime)),
+                                    v.VRMNumber,
+                                    s.ZatparkSitecode,
+                                    vehicleregid = v.Id,
+                                }
+                          ).FirstOrDefault();
+                //Util.GetVehicleDetails(array);
+                //Guid obj = Guid.NewGuid();
+                //referenceno = obj.ToString();
+                referenceno = "GP" + Convert.ToString(vehicles.vehicleregid);
+                sitecode = vehicles.ZatparkSitecode;
+                startdate = Convert.ToDateTime(vehicles.VFromDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicles.VFromDate).ToString("HH:mm");
+                enddate = Convert.ToDateTime(vehicles.VToDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicles.VToDate).ToString("HH:mm");
+                vrm = vehicles.VRMNumber;
+
+                string requeststr = "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}";
+
+                RestClient client = new RestClient(apiurl);
+                RestRequest request = new RestRequest("add_permit", Method.POST);
+                request.AddParameter("permit_data", "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}");
+                request.AddHeader("HTTPS_AUTH", apikey);
+                var response = client.Execute(request);
+
+                var vehicleslots = (from v in _dbContext.VisitorParkings
+                                    join u in _dbContext.RegisterUsers on v.RegisterUserId equals u.Id
+                                    join s in _dbContext.Sites on u.SiteId equals s.Id
+                                    where s.Id == siteId && v.VRMNumber == vrm 
+                                    //where c.RegisterUserId == Id && c.IsActive == true && c.IsDeleted == false
+                                    select new
+                                    {
+                                        v.Id,
+                                        v.StartDate,
+                                        v.EndDate,
+                                        VFromDate = v.StartDate.Date.Add(TimeSpan.Parse(v.StartTime)),
+                                        VToDate = v.EndDate.Date.Add(TimeSpan.Parse(v.EndTime)),
+                                        v.VRMNumber,
+                                        s.ZatparkSitecode,
+                                        vehicleregid = v.Id,
+                                    }
+                         ).ToList();
+
+                if (vehicleslots != null && vehicleslots.Count > 0)
+                {
+                    foreach (var vehicle in vehicleslots)
+                    {
+                        referenceno = vehicle.Id.ToString();
+                        //referencenew = ds.Tables[0].Rows[i]["ReferenceNo"].ToString();
+                        sitecode = vehicle.ZatparkSitecode;
+                        //sitecode = "eur0011-500";
+                        startdate = Convert.ToDateTime(vehicle.VFromDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicle.VFromDate).ToString("HH:mm");
+                        enddate = Convert.ToDateTime(vehicle.VToDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicle.VToDate).ToString("HH:mm");
+                        vrm = vehicle.VRMNumber;
+                        // Common.InfoLogs("ZatparkUpdate method was started vrm= " + vrm + " referencenew= " + referenceno + " startdate= " + startdate + " enddate= " + enddate);
+
+                        string requeststr1 = "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}";
+
+                        //RestClient client1 = new RestClient(apiurl);
+                        //RestRequest request1 = new RestRequest("add_permit", Method.POST);
+                        //request1.AddParameter("permit_data", "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}");
+                        //request.AddHeader("HTTPS_AUTH", apikey);
+                        ////var response = client.Execute(request);
+                        if (response.IsSuccessful)
+                        {
+                            string xml = response.Content;
+                            XmlDocument doc = new XmlDocument();
+                            doc.LoadXml(xml);
+                            string JsonValue = JsonConvert.SerializeXmlNode(doc);
+                            //Common.InfoLogs("Zatparkapi was excuted " + JsonValue);
+                            string myJsonResponse = JsonValue.Replace("?xml", "xml1");
+
+                            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
+                            if (myDeserializedClass.xml.status_code == "0" && myDeserializedClass.xml.error == "0")
+                            {
+                                ArrayList list = new ArrayList();
+                                list.Add(Convert.ToInt32(referenceno));
+                                list.Add(true);
+                                list.Add(requeststr);
+                                list.Add(JsonValue);
+                                list.Add(myDeserializedClass.xml.message);
+
+                                var slots1 = _dbContext.VisitorParkings.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = true;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VisitorParkings.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+
+                            }
+                            if (myDeserializedClass.xml.status_code == "25" && myDeserializedClass.xml.error == "0")
+                            {
+
+                              
+                                var slots1 = _dbContext.VisitorParkings.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = false;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VisitorParkings.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+                            }
+                            if (myDeserializedClass.xml.status_code == "1" || myDeserializedClass.xml.error == "1")
+                            {
+                         
+                                var slots1 = _dbContext.VisitorParkings.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = false;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VisitorParkings.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+                            }
+                        }
+
+                    }
+
+
+
+                }
+            }
+        }
         public void Cancelwhitelistvehicle1(int siteId, string vrm, DateTime startdate, DateTime enddate)
         {
 
