@@ -286,7 +286,7 @@ namespace LabelPad.Repository.UserManagement
                                 }
 
                                 //added code for VehicleRegistration table on 21/03/24
-                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
                                 if (slots1 != null)
                                 {
                                     //slots.ForEach(x =>
@@ -326,7 +326,7 @@ namespace LabelPad.Repository.UserManagement
                                     _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
                                     _dbContext.SaveChanges();
                                 }
-                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
                                 if (slots1 != null)
                                 {
                                     //slots.ForEach(x =>
@@ -508,7 +508,7 @@ namespace LabelPad.Repository.UserManagement
                                 list.Add(JsonValue);
                                 list.Add(myDeserializedClass.xml.message);
 
-                                var slots1 = _dbContext.VisitorParkings.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                var slots1 = _dbContext.VisitorParkings.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
                                 if (slots1 != null)
                                 {
                                     //slots.ForEach(x =>
@@ -531,7 +531,7 @@ namespace LabelPad.Repository.UserManagement
                             {
 
                               
-                                var slots1 = _dbContext.VisitorParkings.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                var slots1 = _dbContext.VisitorParkings.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
                                 if (slots1 != null)
                                 {
                                     //slots.ForEach(x =>
