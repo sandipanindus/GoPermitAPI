@@ -76,6 +76,7 @@ namespace LabelPad.Repository.VehicleRegistrationManagement
         {
             try
             {
+                string uniqueVehicleId = Guid.NewGuid().ToString();
                 for (int i = 0; i < objinput.Count; i++)
                 {
                     VehicleRegistration vehicle =await _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.Model == objinput[i].Model && x.RegisterUserId == objinput[i].TenantId).FirstOrDefaultAsync();
@@ -109,6 +110,7 @@ namespace LabelPad.Repository.VehicleRegistrationManagement
                         reg.IsDeleted = false;
                         reg.CreatedBy = objinput[i].LoginId;
                         reg.CreatedOn = DateTime.Now;
+                        reg.UniqueVehicleId = uniqueVehicleId;
                         _dbContext.VehicleRegistrations.Add(reg);
                         await _dbContext.SaveChangesAsync();
                     }

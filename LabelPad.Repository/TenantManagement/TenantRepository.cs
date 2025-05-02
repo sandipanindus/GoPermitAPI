@@ -226,6 +226,41 @@ namespace LabelPad.Repository.TenantManagement
 
             return vehicles;
         }
+        public async Task<dynamic> getvehcilecountsbydatesvrm(string tenantid, string bayno, string dates, string vrm)
+        {
+            var uniqueVehicleId = await _dbContext.VehicleRegistrations
+                .Where(v => v.VRM == vrm && v.IsActive && !v.IsDeleted)
+                .Select(v => v.UniqueVehicleId)
+                .FirstOrDefaultAsync();
+
+            if (uniqueVehicleId == null)
+            {
+                return new { message = "No records found for the given VRM" };
+            }
+
+            DateTime filterDate = Convert.ToDateTime(dates).Date;
+            int tenantIdInt = Convert.ToInt32(tenantid);
+            int bayNoInt = Convert.ToInt32(bayno);
+            var vehicles = await (from v in _dbContext.VehicleRegistrations
+                                  where v.UniqueVehicleId == uniqueVehicleId && v.RegisterUserId == tenantIdInt && v.ParkingBayNo == bayNoInt && v.EndDate.Value.Date == filterDate && v.IsActive && !v.IsDeleted
+                                  select new
+                                  {
+                                      id = v.Id,
+                                      vrm = v.VRM,
+                                      Make = v.Make,
+                                      Model = v.Model,
+                                      // parkingBayNo = pb.BayName,
+                                      startDate = v.StartDate,
+                                      bayconfig = v.ConfigNo,
+                                      // issavecount = v.IsSaveCount,
+                                      configno = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == Convert.ToInt32(tenantid) && x.ParkingBayNo == Convert.ToInt32(bayno)).Max(x => x.ConfigNo),
+                                      // maxissavecount = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == Convert.ToInt32(tenantid) && x.ParkingBayNo == Convert.ToInt32(bayno)).Max(x => x.IsSaveCount),
+                                      //selectedddates = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.IsActive == true && x.IsDeleted == false && x.VehicleRegistrationId == v.Id).ToList(),
+                                      endDate = v.EndDate,
+                                  }).ToListAsync();
+
+            return vehicles;
+        }
 
         public class returndata
         {
@@ -495,7 +530,7 @@ namespace LabelPad.Repository.TenantManagement
 
             return list;
         }
-        public async Task<dynamic> AddSupport(AddSupportAc objinput)
+        public async Task<Support> AddSupport(AddSupportAc objinput)
         {
            
                 Support obj = new Support();
@@ -518,8 +553,7 @@ namespace LabelPad.Repository.TenantManagement
                     _dbContext.Supports.Update(support);
                     _dbContext.SaveChanges();
                 }
-           
-            return new { Message = "Saved Successfully" };
+            return support;
         }
         public async Task<dynamic> AddVehicles(List<AddVehicleRegistrationAc> objinput)
         {
@@ -1011,7 +1045,7 @@ namespace LabelPad.Repository.TenantManagement
         public async Task<dynamic> AddVehicle_New(List<AddVehicleRegistrationAc> objinput)
         {
             var tenantBayList = objinput.Select(x => new { x.TenantId, BayNo = Convert.ToInt32(x.bayno) }).ToList();
-
+            string uniqueVehicleId = Guid.NewGuid().ToString();
             var existingVehicles = _dbContext.VehicleRegistrations
                 .Where(v => v.IsActive)
                 .AsEnumerable()
@@ -1189,6 +1223,7 @@ namespace LabelPad.Repository.TenantManagement
                     VRM = input.vrm,
                     CreatedOn = DateTime.Now,
                     CreatedBy = user.Id,
+                    UniqueVehicleId = uniqueVehicleId,
                     StartDate = Convert.ToDateTime(input.StartDate),
                     EndDate = Convert.ToDateTime(input.EndDate),
                     ParkingBayNo = bayno

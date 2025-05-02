@@ -261,13 +261,36 @@ namespace LabelPadCoreApi.Controllers
                                     where v.Id == objdata.Id
                                     select v).FirstOrDefaultAsync();
 
+                var visitorParking = await (from v in _dbContext.VisitorBayNos
+                                            where v.Id == objdata.visitorbayid
+                                            select v).FirstOrDefaultAsync();
+
                 string Firstname = result.Name;
                 string Surname = result.Surname;
                 string Email = result.Email;
                 string Duration = result.Duration;
                 string SessionUnit = result.SessionUnit;
+                string VRM= result.VRMNumber;
+                string StartDate = Convert.ToString(result.StartDate);
+                string EndDate = Convert.ToString(result.EndDate); 
+                int siteId = result.SiteId;
                 int tenantId = result.RegisterUserId;
-                
+                string BayName = visitorParking.BayName;
+
+                var siteDetails = await (from u in _dbContext.Sites
+                                         where u.Id == siteId
+                                         select u).FirstOrDefaultAsync();
+
+                string SiteName = siteDetails.SiteName;
+
+                // Concatenate with commas, skipping empty/null values safely
+                string SiteAddress = string.Join(", ", new[] {
+                 siteDetails.SiteAddress,
+                 siteDetails.City,
+                 siteDetails.State,
+                 siteDetails.Zipcode
+}           .Where(x => !string.IsNullOrWhiteSpace(x)));
+
                 var User = await (from u in _dbContext.RegisterUsers
                                   where u.Id == tenantId
                                   select u).FirstOrDefaultAsync();
@@ -292,7 +315,12 @@ namespace LabelPadCoreApi.Controllers
                     string readFile = reader.ReadToEnd();
                     string myString = "";
                     myString = readFile;
-
+                    myString = myString.Replace("%{#{VRM}#}%", VRM);
+                    myString = myString.Replace("%{#{SiteName}#}%", SiteName);
+                    myString = myString.Replace("%{#{StartTime}#}%", StartDate);
+                    myString = myString.Replace("%{#{EndTime}#}%", EndDate);
+                    myString = myString.Replace("%{#{SiteAddress}#}%", SiteAddress);
+                    myString = myString.Replace("%{#{BayName}#}%", BayName);
 
                     string tenantemail = "";
                     //var sites = _dbContext.Sites.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == objdata.SiteId).FirstOrDefault();
@@ -404,12 +432,7 @@ namespace LabelPadCoreApi.Controllers
                     {
                         sitename = sites.SiteName;
                     }
-                    var user = _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == objdata.TenantId).FirstOrDefault();
-                    if (user != null)
-                    {
-                        tenantemail = user.Email;
 
-                    }
                     myString = myString.Replace("%{#{PropertyName}#}%", sitename);
                     // myString = myString.Replace("%{#{BayNo}#}%", bayid);
                     string body = myString;
@@ -422,6 +445,12 @@ namespace LabelPadCoreApi.Controllers
                         var filePath1 = Path.Combine(Directory.GetCurrentDirectory(), folderName1);
                         StreamReader reader1 = new StreamReader(filePath1);
                         string readFile1 = reader1.ReadToEnd();
+                        var user = _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == objdata.TenantId).FirstOrDefault();
+                        if (user != null)
+                        {
+                            tenantemail = user.Email;
+
+                        }
 
 
                         myString1 = readFile1;
@@ -2403,6 +2432,8 @@ namespace LabelPadCoreApi.Controllers
                 //  string dt = DateTime.Now.ToString("MM.dd.yyyy");
                 //  myString = myString.Replace("%{#{Datetime}#}%", dt);
                 myString = myString.Replace("%{#{Name}#}%", user.FirstName);
+                myString = myString.Replace("%{#{CaseId}#}%", support1.TicketId.ToString());
+                myString = myString.Replace("%{#{Subject}#}%", support1.Subject);
 
                 string body = myString;
                 bool key = await _userRepository.SendEmailAsync(user.Email, user.FirstName, "Update on Your Support Ticket ", body, "Support Ticket_Status");
@@ -2718,40 +2749,43 @@ namespace LabelPadCoreApi.Controllers
                 var support = _tenantRepository.ReplySupport(obj);
                 if (support != null)
                 {
-                    var folderName = Path.Combine("EmailHtml", "Response.html");
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
-                    StreamReader reader = new StreamReader(filePath);
-                    int ticketid = obj.TicketId;
-                    string name = string.Empty;
-                    string email = string.Empty;
-                    RegisterUser user = new RegisterUser();
-                    var visitor = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == ticketid).FirstOrDefault();
-                    if (visitor != null)
-                    {
-                        user = _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == visitor.RegisterUserId).FirstOrDefault();
-                        if (user != null)
-                        {
-                            name = user.FirstName + " " + user.LastName;
-                            email = user.Email;
-                        }
-                    }
-                    //string subject = acountconfirm;
-                    string readFile = reader.ReadToEnd();
-                    string myString = "";
-                    myString = readFile;
-                    // string dt = DateTime.Now.ToString("MM.dd.yyyy");
-                    myString = myString.Replace("%{#{Name}#}%", name);
-                    myString = myString.Replace("%{#{Response}#}%", obj.Issue);
-                    string body = myString;
-                    bool key = await _userRepository.SendEmailAsync(email, name, obj.Subject, body, "GOPERMIT_Responce");
-                    if (key == true)
-                    {
-                        return Ok(new ApiServiceResponse() { Status = "200", Message = "Response send successfully", Result = null });
-                    }
-                    else
-                    {
-                        return Ok(new ApiServiceResponse() { Status = "-100", Message = "Mail sending error occured", Result = null });
-                    }
+                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Response send successfully", Result = null });
+
+                    //var folderName = Path.Combine("EmailHtml", "Response.html");
+                    //var filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                    //StreamReader reader = new StreamReader(filePath);
+                    //int ticketid = obj.TicketId;
+                    //string name = string.Empty;
+                    //string email = string.Empty;
+                    //RegisterUser user = new RegisterUser();
+                    //var visitor = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == ticketid).FirstOrDefault();
+                    //if (visitor != null)
+                    //{
+                    //    user = _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == visitor.RegisterUserId).FirstOrDefault();
+                    //    if (user != null)
+                    //    {
+                    //        name = user.FirstName + " " + user.LastName;
+                    //        email = user.Email;
+                    //    }
+                    //}
+                   
+                    //string readFile = reader.ReadToEnd();
+                    //string myString = "";
+                    //myString = readFile;
+                    //myString = myString.Replace("%{#{Name}#}%", name);
+                    //myString = myString.Replace("%{#{Response}#}%", obj.Issue);
+                    //string body = myString;
+                    //bool key = await _userRepository.SendEmailAsync(email, name, obj.Subject, body, "GOPERMIT_Responce");
+
+
+                    //if (key == true)
+                    //{
+                    //    return Ok(new ApiServiceResponse() { Status = "200", Message = "Response send successfully", Result = null });
+                    //}
+                    //else
+                    //{
+                    //    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Mail sending error occured", Result = null });
+                    //}
                 }
                 else
                 {

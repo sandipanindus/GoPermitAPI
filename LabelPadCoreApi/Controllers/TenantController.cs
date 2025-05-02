@@ -416,6 +416,9 @@ namespace LabelPadCoreApi.Controllers
                     string myString = "";
                     myString = readFile;
 
+                    var Support = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == result.Id).FirstOrDefault();
+                    myString = myString.Replace("%{#{CaseId}#}%", Support.TicketId.ToString());
+                    myString = myString.Replace("%{#{Subject}#}%", Support.Subject);
                     myString = myString.Replace("%{#{Name}#}%", user.FirstName + " " + user.LastName);
                     string body = myString;
                     bool key = await SendEmail(user.Email, user.FirstName, "We will Contact Shortly !", body, "GOPERMIT_WE Contact");
@@ -725,6 +728,23 @@ namespace LabelPadCoreApi.Controllers
             {
                 //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
                 var vehicles = await _tenantRepository.getvehcilecountsbydates(tenantid, bayno, date);
+
+                return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = vehicles });
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the GetSites Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+
+        [HttpGet("getvehcilecountsbydatesvrm")]
+        public async Task<IActionResult> getvehcilecountsbydatesvrm(string tenantid, string bayno, string date, string vrm)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("GetTenantsBySite Method was started,Controller:Admin");
+                var vehicles = await _tenantRepository.getvehcilecountsbydatesvrm(tenantid, bayno, date, vrm);
 
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = vehicles });
             }
