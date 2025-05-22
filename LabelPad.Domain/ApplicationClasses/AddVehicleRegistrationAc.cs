@@ -20,4 +20,14 @@ namespace LabelPad.Domain.ApplicationClasses
         public int LoginId { get; set; }
         public bool Update { get; set; }
     }
+    public class UpdateVehicleResponse
+    {
+        public List<string> Messages { get; set; }
+    }
+
+    public class AddVehicleResponse
+    {
+        public string Message { get; set; }
+    }
+
 }

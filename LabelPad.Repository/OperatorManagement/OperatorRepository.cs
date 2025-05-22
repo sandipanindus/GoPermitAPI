@@ -19,13 +19,28 @@ namespace LabelPad.Repository.OperatorManagement
             _dbContext = dbContext;
             _configuration = configuration;
         }
-        public async Task<IEnumerable<OperatorDetails>> GetAllOperators()
+        public async Task<IEnumerable<OperatorDetails>> GetAllOperators(int id,int RoleId)
         {
             try
             {
 
-            var OperatorDetails = await _dbContext.OperatorDetail.Where(o => !o.IsDeleted).ToListAsync();
-                return OperatorDetails;
+
+                if(RoleId == 1)
+                {
+                    var OperatorDetails = await _dbContext.OperatorDetail.Where(o => !o.IsDeleted).ToListAsync();
+                    return OperatorDetails;
+                }
+                else
+                {
+                    var user = await _dbContext.RegisterUsers.FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
+
+                    var OperatorDetails = await _dbContext.OperatorDetail.Where(o => !o.IsDeleted && o.Id == user.OperatorId).ToListAsync();
+                    return OperatorDetails;
+                }
+
+               
+
+
             }
             catch (Exception ex)
             {

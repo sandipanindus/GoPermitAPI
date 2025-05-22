@@ -6,7 +6,7 @@ using System.Text;
 
 namespace LabelPad.Domain.Models
 {
-    public class VisitorParkingTemp:BaseModel
+    public class VisitorParkingTemp : BaseModel
     {
         public int SiteId { get; set; }
         public Site Site { get; set; }
@@ -31,5 +31,13 @@ namespace LabelPad.Domain.Models
         public string EndTime { get; set; }
 
         public bool CCtome { get; set; }
+    }
+    public class UpdateVistorsParkingRequest
+    {
+        public int Id { get; set; }
+        public string VRMNumber { get; set; }
+
+        public string StartTime { get; set; }
+        public string EndTime { get; set; }
     }
 }

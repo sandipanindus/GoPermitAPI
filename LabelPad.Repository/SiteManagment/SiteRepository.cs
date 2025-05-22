@@ -161,6 +161,7 @@ namespace LabelPad.Repository.SiteManagment
                                          id = Convert.ToString(rw["Id"]),
                                         // bayName = Convert.ToString(rw["BayName"]) + " " + Convert.ToString(rw["FirstName"]) + " " + Convert.ToString(rw["LastName"]),
                                          bayName = Convert.ToString(rw["BayName"]),
+                                         updatedBy = Convert.ToString(rw["UpdatedBy"])
                                        
 
 
@@ -389,8 +390,8 @@ namespace LabelPad.Repository.SiteManagment
                 for (int i = 0; i < supports.Count; i++)
                 {
                     GetSupportList model = new GetSupportList();
-                    string subject = supports[i].Subject;
-                    var result = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Subject == subject).FirstOrDefault();
+                    int subject = supports[i].Id;
+                    var result = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == subject).FirstOrDefault();
                     if (result != null)
                     {
                         int ticketid = result.Id;
@@ -624,7 +625,32 @@ namespace LabelPad.Repository.SiteManagment
         {
             return new DateTime((dt.Ticks + d.Ticks - 1) / d.Ticks * d.Ticks, dt.Kind);
         }
+        
 
+            public async Task<dynamic> GetVisitorParkingsById(string TenantId, string id)
+            {
+            DateTime todayday = DateTime.UtcNow.Date;
+
+            var visitors2 = (from l in _dbContext.VisitorParkingTemps
+                             join r in _dbContext.RegisterUsers on l.RegisterUserId equals r.Id
+                             where l.RegisterUserId == Convert.ToInt32(TenantId) && l.Id == Convert.ToInt32(id) 
+                             && l.IsActive == true && l.IsDeleted == false
+                             && l.StartDate >= todayday
+                             select new
+                             {
+                                 Date = l.StartDate.ToString("dd-MM-yyyy"),
+                                 vrm = l.VRMNumber,
+                                 Name = l.Name + " " + l.Surname,
+                                 Contact = r.MobileNumber,
+                                 Starttime = l.StartTime,
+                                 Endtime = l.EndTime,
+                                 Id = l.Id,
+                                 status = false
+                             }).OrderByDescending(x => x.Id).ToList();
+
+
+            return (visitors2);
+        }
         public async Task<dynamic> GetVisitorParkings(string TenantId)
         {
             DateTime todayday = DateTime.UtcNow.Date;
@@ -980,6 +1006,10 @@ namespace LabelPad.Repository.SiteManagment
             site.ParkingBaySeperator = objsite.Seperator;
             site.ParkingBaySectionsOrFloors = Convert.ToInt32(objsite.Section);
             site.VisitorSeperator = objsite.VSeperator;
+            site.IndustryId = objsite.IndustryId;
+            site.OperatorId = objsite.OperatorId;
+            site.EnforcementService = objsite.EnforcementService;
+            site.APIKey = objsite.APIKey;
             site.VisitorSectionsOrFloors = Convert.ToInt32(objsite.VSection);
             _dbContext.Sites.Add(site);
             _dbContext.SaveChanges();
@@ -1218,6 +1248,10 @@ namespace LabelPad.Repository.SiteManagment
                             s.Zipcode,
                             s.VisitorSectionsOrFloors,
                             s.VisitorSeperator,
+                            s.IndustryId,
+                            s.OperatorId,
+                            s.EnforcementService,
+                            s.APIKey,
                             bays = (from p in _dbContext.ParkingBays
                                     where p.SiteId == s.Id && p.IsActive == true && p.IsDeleted == false
                                     select new
@@ -1578,6 +1612,7 @@ namespace LabelPad.Repository.SiteManagment
             int count2 = count1 * PageNo - count1;
             if (RoleId == 1)
             {
+
                 if (PageSize == 0)
                 {
                     List<Site> sites1 = _dbContext.Sites.Where(x => x.IsDeleted == false).OrderByDescending(x => x.Id).ToList();
@@ -1616,6 +1651,51 @@ namespace LabelPad.Repository.SiteManagment
                 }
 
             }
+           else if (RoleId != 1)
+            {
+                var users = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == LoginId).OrderByDescending(x => x.Id).FirstOrDefault();
+
+                if (PageSize == 0)
+                {
+
+
+                    List<Site> sites1 = _dbContext.Sites.Where(x => x.IsDeleted == false && x.OperatorId== users.OperatorId).OrderByDescending(x => x.Id).ToList();
+                    //var sites1 = (from s in _dbContext.Sites
+                    //             where s.IsActive == true && s.IsDeleted == false
+                    //             select new
+                    //             {
+                    //                 s.Id,
+                    //                 SiteName = s.SiteName,
+                    //             }).OrderByDescending(x => x.Id).ToList();
+                    return sites1;
+                }
+                else
+                {
+                    int totalitems = _dbContext.Sites.Where(x => x.IsDeleted == false).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var sites = (from s in _dbContext.Sites
+                                 where s.IsActive == true && s.IsDeleted == false && s.OperatorId== users.OperatorId
+                                 select new
+                                 {
+                                     PageNo = PageNo,
+                                     s.Id,
+                                     SiteName = s.SiteName,
+                                     s.Email,
+                                     s.MobileNumber,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage,
+                                 }).OrderByDescending(x => x.Id).ToList();
+
+
+
+                    sites = sites.Skip(count2).Take(count1).ToList();
+
+                    return sites;
+                }
+
+            }
+
             else
             {
 
@@ -1682,6 +1762,34 @@ namespace LabelPad.Repository.SiteManagment
             }
         }
 
+        public async Task<dynamic> GetSitesbyoperatorid(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId,int OperatorId)
+        {
+
+            int count1 = PageSize;
+            int count2 = count1 * PageNo - count1;
+           
+
+                if (OperatorId != 0)
+                {
+                    List<Site> sites1 = _dbContext.Sites.Where(x => x.IsDeleted == false && x.OperatorId== OperatorId).OrderByDescending(x => x.Id).ToList();
+                    //var sites1 = (from s in _dbContext.Sites
+                    //             where s.IsActive == true && s.IsDeleted == false
+                    //             select new
+                    //             {
+                    //                 s.Id,
+                    //                 SiteName = s.SiteName,
+                    //             }).OrderByDescending(x => x.Id).ToList();
+                    return sites1;
+                }
+            else
+            {
+                return null;
+            }
+               
+
+           
+        }
+
         public async Task<dynamic> GetNotificatiosList(int tenantId)
         {
             var count = (from s in _dbContext.AuditLogs
@@ -1741,7 +1849,11 @@ namespace LabelPad.Repository.SiteManagment
                 site.Zatparklogs24hrs = objsite.Zatparklogs24hrs;
                 site.UpdatedBy = objsite.LoginId;
                 site.MaxVehiclesPerBay = objsite.VehiclesPerBay;
+                site.OperatorId = objsite.OperatorId;
+                site.IndustryId = objsite.IndustryId;
                 site.UpdatedOn = DateTime.Now;
+                site.EnforcementService = objsite.EnforcementService;
+                site.APIKey = objsite.APIKey;
                 if (objsite.ParkingBays.Count != 0)
                 {
                     site.ParkingBaySeperator = objsite.Seperator;

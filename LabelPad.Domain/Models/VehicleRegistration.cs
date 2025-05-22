@@ -28,6 +28,7 @@ namespace LabelPad.Domain.Models
         public string Response { get; set; }
         public DateTime? SentToZatparkDateTime { get; set; }
         public string ZatparkResponse { get; set; }
+        public string UniqueVehicleId { get; set; }
 
     }
 }

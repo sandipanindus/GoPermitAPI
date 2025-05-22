@@ -9,7 +9,7 @@ namespace LabelPad.Repository.OperatorManagement
 {
     public interface IOperatorRepository
     {
-        Task<IEnumerable<OperatorDetails>> GetAllOperators();
+        Task<IEnumerable<OperatorDetails>> GetAllOperators(int id,int RoleId);
         Task<OperatorDetails> GetOperatorById(int id);
         Task<OperatorDetails> CreateOperator(OperatorDetails operatorDetails);
         Task<OperatorDetails> UpdateOperator(OperatorDetails operatorDetails);

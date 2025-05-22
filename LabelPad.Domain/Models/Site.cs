@@ -28,8 +28,9 @@ namespace LabelPad.Domain.Models
         public string TenantParkingBays { get; set; }
         [StringLength(100)]
         public string VisitorParkingBays { get; set; }
-
+        public string EnforcementService { get; set; }
         public int NoOfTotalBay { get; set; }
+        public int IndustryId { get; set; }
         public int ParkingBaySectionsOrFloors { get; set; }
         [StringLength(50)]
         public string ParkingBaySeperator { get; set; }
@@ -38,12 +39,13 @@ namespace LabelPad.Domain.Models
         [StringLength(50)]
         public string VisitorSeperator { get; set; }
         public int MaxVehiclesPerBay { get; set; }
+
+        public int OperatorId { get; set; }
         public string ZatparkSitecode { get; set; }
         public bool ManageParkingAvailble { get; set; }
         public bool visitorParkingAvailble { get; set; }
         public bool Zatparklogs24hrs { get; set; }
-
-
+        public string APIKey { get; set; }
         public ICollection<BayConfig> BayConfigs { get; set; }
         public ICollection<ParkingBay> ParkingBays { get; set; }
         public ICollection<VisitorBay> VisitorBays { get; set; }

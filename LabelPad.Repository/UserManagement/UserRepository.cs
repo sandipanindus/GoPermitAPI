@@ -1,4 +1,8 @@
-﻿using LabelPad.Domain.ApplicationClasses;
+﻿
+using System;
+using LabelPad.Domain.ApplicationClasses;
+using Microsoft.Extensions.Options;
+
 using LabelPad.Domain.Data;
 using LabelPad.Domain.Models;
 using Microsoft.AspNetCore.Http;
@@ -7,7 +11,6 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using OfficeOpenXml;
 using RestSharp;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -21,9 +24,24 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Threading;
+using Microsoft.Extensions.Options;
+using MailKit.Security;
+using MimeKit;
+using System.Net.Http;
+using System.Text.Json;
+using Microsoft.Net.Http.Headers;
+
+
+
+
+
+
+
 
 namespace LabelPad.Repository.UserManagement
 {
+
 
     public class Xml1
     {
@@ -54,15 +72,18 @@ namespace LabelPad.Repository.UserManagement
     {
         private readonly LabelPadDbContext _dbContext;
         private readonly IConfiguration _configuration;
-        public UserRepository(LabelPadDbContext dbContext, IConfiguration configuration)
+        private readonly EmailSettings _emailSettings;
+
+
+        public UserRepository(LabelPadDbContext dbContext, IConfiguration configuration, IOptions<EmailSettings> emailSettings)
         {
             _dbContext = dbContext;
             _configuration = configuration;
+            _emailSettings = emailSettings.Value;
         }
         public async Task<dynamic> AddUser(AddUserAc addUser)
         {
-            try
-            {
+           
                 await _dbContext.RegisterUsers.AddAsync(new RegisterUser
                 {
                     FirstName = addUser.FirstName,
@@ -83,14 +104,14 @@ namespace LabelPad.Repository.UserManagement
                     IsDeleted = false,
                     CreatedBy = addUser.LoginId,
                     CreatedOn = DateTime.Now,
-                    SiteId = addUser.SiteId
+                    SiteId = addUser.SiteId,
+                    IsSiteUser = addUser.IsSiteUser,
+                    OperatorId = addUser.OperatorId,
+                    IsMicrosoftAccount = addUser.IsMicrosoftAccount,
+                    IsOperator = addUser.IsOperator
                 });
                 await _dbContext.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-
-            }
+           
             return new { Message = "User saved successfully" };
         }
 
@@ -103,8 +124,7 @@ namespace LabelPad.Repository.UserManagement
         }
         public async Task<dynamic> AddTenant(UpdateRegisterUserAc model)
         {
-            try
-            {
+           
                 RegisterUser user = new RegisterUser();
                 user.FirstName = model.FirstName;
                 user.LastName = model.LastName;
@@ -128,11 +148,7 @@ namespace LabelPad.Repository.UserManagement
                 user.CreatedOn = DateTime.Now;
                 _dbContext.RegisterUsers.Add(user);
                 _dbContext.SaveChanges();
-            }
-            catch (Exception ex)
-            {
-
-            }
+           
 
             return new { Message = "User saved successfully" };
         }
@@ -142,8 +158,8 @@ namespace LabelPad.Repository.UserManagement
         {
             string apikey = string.Empty; string apiurl = string.Empty;
 
-            apikey = _configuration["ZatparkApiKey"];
-            apiurl = _configuration["ZatparkUrl"];
+           // apikey = _configuration["ZatparkApiKey"];
+
             //Common.InfoLogs("Config files read");
             string referenceno = string.Empty;
             string referencenew = string.Empty;
@@ -152,6 +168,8 @@ namespace LabelPad.Repository.UserManagement
             string enddate = string.Empty;
             //Common.InfoLogs("Before fetching sites");
             var sites = _dbContext.Sites.Where(x => x.Id == siteId && x.IsActive == true && x.IsDeleted == false).FirstOrDefault(); //Util.GetSites();
+            apikey = sites.APIKey;
+            apiurl = _configuration["ZatparkUrl"];
             // Common.InfoLogs("site Fetched");
             if (sites != null)
             {
@@ -266,6 +284,26 @@ namespace LabelPad.Repository.UserManagement
                                     _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
                                     _dbContext.SaveChanges();
                                 }
+
+                                //added code for VehicleRegistration table on 21/03/24
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = true;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VehicleRegistrations.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+
                             }
                             if (myDeserializedClass.xml.status_code == "25" && myDeserializedClass.xml.error == "0")
                             {
@@ -288,8 +326,25 @@ namespace LabelPad.Repository.UserManagement
                                     _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
                                     _dbContext.SaveChanges();
                                 }
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots.IsSentToZatPark = false;
+                                    slots.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots.Request = requeststr;
+                                    slots.Response = JsonValue;
+                                    slots.SentToZatparkDateTime = DateTime.Now;
+                                    slots.UpdatedOn = DateTime.Now;
+                                    slots.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VehicleRegistrations.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
                             }
-                            if (myDeserializedClass.xml.status_code == "1" && myDeserializedClass.xml.error == "1")
+                            if (myDeserializedClass.xml.status_code == "1" || myDeserializedClass.xml.error == "1")
                             {
 
                                 //DataSet dataset = Util.UpdateVehicleDetails(list);
@@ -310,7 +365,23 @@ namespace LabelPad.Repository.UserManagement
                                     _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
                                     _dbContext.SaveChanges();
                                 }
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = false;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
 
+                                    _dbContext.VehicleRegistrations.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
                             }
                         }
 
@@ -322,6 +393,192 @@ namespace LabelPad.Repository.UserManagement
             }
         }
 
+
+        public void whitelistvehicleforvisitor(int siteId, string vrm)
+        {
+            string apikey = string.Empty; string apiurl = string.Empty;
+
+            // apikey = _configuration["ZatparkApiKey"];
+
+            //Common.InfoLogs("Config files read");
+            string referenceno = string.Empty;
+            string referencenew = string.Empty;
+            string sitecode = string.Empty;
+            string startdate = string.Empty;
+            string enddate = string.Empty;
+            //Common.InfoLogs("Before fetching sites");
+            var sites = _dbContext.Sites.Where(x => x.Id == siteId && x.IsActive == true && x.IsDeleted == false).FirstOrDefault(); //Util.GetSites();
+            apikey = sites.APIKey;
+            apiurl = _configuration["ZatparkUrl"];
+            // Common.InfoLogs("site Fetched");
+            if (sites != null)
+            {
+                bool zatparkhours = sites.Zatparklogs24hrs;
+                //ArrayList array = new ArrayList();
+                //array.Add(siteId);
+                //array.Add(1);
+                var vehicles = (from v in _dbContext.VisitorParkings
+                                join u in _dbContext.RegisterUsers on v.RegisterUserId equals u.Id
+                                join s in _dbContext.Sites on u.SiteId equals s.Id
+                                where  s.Id == siteId && v.VRMNumber == vrm 
+                                //where c.RegisterUserId == Id && c.IsActive == true && c.IsDeleted == false
+                                select new
+                                {
+                                    v.Id,
+                                    v.StartDate,
+                                    v.EndDate,
+                                    VFromDate = v.StartDate.Date.Add(TimeSpan.Parse(v.StartTime)),
+                                    VToDate = v.EndDate.Date.Add(TimeSpan.Parse(v.EndTime)),
+                                    v.VRMNumber,
+                                    s.ZatparkSitecode,
+                                    vehicleregid = v.Id,
+                                }
+                          ).FirstOrDefault();
+                //Util.GetVehicleDetails(array);
+                //Guid obj = Guid.NewGuid();
+                //referenceno = obj.ToString();
+                referenceno = "GP" + Convert.ToString(vehicles.vehicleregid);
+                sitecode = vehicles.ZatparkSitecode;
+                startdate = Convert.ToDateTime(vehicles.VFromDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicles.VFromDate).ToString("HH:mm");
+                enddate = Convert.ToDateTime(vehicles.VToDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicles.VToDate).ToString("HH:mm");
+                vrm = vehicles.VRMNumber;
+
+                string requeststr = "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}";
+
+                RestClient client = new RestClient(apiurl);
+                RestRequest request = new RestRequest("add_permit", Method.POST);
+                request.AddParameter("permit_data", "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}");
+                request.AddHeader("HTTPS_AUTH", apikey);
+                var response = client.Execute(request);
+
+                var vehicleslots = (from v in _dbContext.VisitorParkings
+                                    join u in _dbContext.RegisterUsers on v.RegisterUserId equals u.Id
+                                    join s in _dbContext.Sites on u.SiteId equals s.Id
+                                    where s.Id == siteId && v.VRMNumber == vrm 
+                                    //where c.RegisterUserId == Id && c.IsActive == true && c.IsDeleted == false
+                                    select new
+                                    {
+                                        v.Id,
+                                        v.StartDate,
+                                        v.EndDate,
+                                        VFromDate = v.StartDate.Date.Add(TimeSpan.Parse(v.StartTime)),
+                                        VToDate = v.EndDate.Date.Add(TimeSpan.Parse(v.EndTime)),
+                                        v.VRMNumber,
+                                        s.ZatparkSitecode,
+                                        vehicleregid = v.Id,
+                                    }
+                         ).ToList();
+
+                if (vehicleslots != null && vehicleslots.Count > 0)
+                {
+                    foreach (var vehicle in vehicleslots)
+                    {
+                        referenceno = vehicle.Id.ToString();
+                        //referencenew = ds.Tables[0].Rows[i]["ReferenceNo"].ToString();
+                        sitecode = vehicle.ZatparkSitecode;
+                        //sitecode = "eur0011-500";
+                        startdate = Convert.ToDateTime(vehicle.VFromDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicle.VFromDate).ToString("HH:mm");
+                        enddate = Convert.ToDateTime(vehicle.VToDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicle.VToDate).ToString("HH:mm");
+                        vrm = vehicle.VRMNumber;
+                        // Common.InfoLogs("ZatparkUpdate method was started vrm= " + vrm + " referencenew= " + referenceno + " startdate= " + startdate + " enddate= " + enddate);
+
+                        string requeststr1 = "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}";
+
+                        //RestClient client1 = new RestClient(apiurl);
+                        //RestRequest request1 = new RestRequest("add_permit", Method.POST);
+                        //request1.AddParameter("permit_data", "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}");
+                        //request.AddHeader("HTTPS_AUTH", apikey);
+                        ////var response = client.Execute(request);
+                        if (response.IsSuccessful)
+                        {
+                            string xml = response.Content;
+                            XmlDocument doc = new XmlDocument();
+                            doc.LoadXml(xml);
+                            string JsonValue = JsonConvert.SerializeXmlNode(doc);
+                            //Common.InfoLogs("Zatparkapi was excuted " + JsonValue);
+                            string myJsonResponse = JsonValue.Replace("?xml", "xml1");
+
+                            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
+                            if (myDeserializedClass.xml.status_code == "0" && myDeserializedClass.xml.error == "0")
+                            {
+                                ArrayList list = new ArrayList();
+                                list.Add(Convert.ToInt32(referenceno));
+                                list.Add(true);
+                                list.Add(requeststr);
+                                list.Add(JsonValue);
+                                list.Add(myDeserializedClass.xml.message);
+
+                                var slots1 = _dbContext.VisitorParkings.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = true;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VisitorParkings.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+
+                            }
+                            if (myDeserializedClass.xml.status_code == "25" && myDeserializedClass.xml.error == "0")
+                            {
+
+                              
+                                var slots1 = _dbContext.VisitorParkings.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = false;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VisitorParkings.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+                            }
+                            if (myDeserializedClass.xml.status_code == "1" || myDeserializedClass.xml.error == "1")
+                            {
+                         
+                                var slots1 = _dbContext.VisitorParkings.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = false;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VisitorParkings.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+                            }
+                        }
+
+                    }
+
+
+
+                }
+            }
+        }
         public void Cancelwhitelistvehicle1(int siteId, string vrm, DateTime startdate, DateTime enddate)
         {
 
@@ -536,8 +793,7 @@ namespace LabelPad.Repository.UserManagement
         {
             bool iscancelwhitelist = false;
             //bool issentzatpark = false;
-            try
-            {
+           
                 int siteid = 0;
                 if (addUser.SiteName != null)
                 {
@@ -644,7 +900,7 @@ namespace LabelPad.Repository.UserManagement
                                 //parkingobj.Status = true;
                                 //_dbContext.ParkingBayNos.Add(parkingobj);
                                 //_dbContext.SaveChanges();
-                                var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).FirstOrDefault();
+                                var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id && x.BayName == addUser.BayConfigs[i].bayid).FirstOrDefault();
                                 if (isParking != null)
                                 {
                                     if (addUser.BayConfigs[i].vehiclereg != "")
@@ -656,7 +912,8 @@ namespace LabelPad.Repository.UserManagement
                                         vr.VRM = addUser.BayConfigs[i].vehiclereg;
                                         vr.CreatedOn = DateTime.Now;
                                         vr.CreatedBy = 1;
-                                        vr.StartDate = Convert.ToDateTime(startdate1);
+                                        vr.IsSaveCount = 1;
+                                         vr.StartDate = Convert.ToDateTime(startdate1);
                                         vr.EndDate = Convert.ToDateTime(enddate1);
                                         vr.ParkingBayNo = isParking.Id;
                                         _dbContext.VehicleRegistrations.Add(vr);
@@ -697,14 +954,14 @@ namespace LabelPad.Repository.UserManagement
                                         if (iscancelwhitelist == true)
                                         {
                                             Cancelwhitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
-                                            whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
+                                          //  whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
 
                                         }
                                         else
                                         {
                                             whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
                                         }
-                                        // whitelistvehicle(Convert.ToInt32(addUser.SiteId), vr.VRM);
+                                         whitelistvehicle(Convert.ToInt32(addUser.SiteId), vr.VRM);
 
                                     }
 
@@ -722,7 +979,7 @@ namespace LabelPad.Repository.UserManagement
                                 parkingbayno.StartDate = Convert.ToDateTime(startdate);
                                 parkingbayno.EndDate = Convert.ToDateTime(enddate);
                                 parkingbayno.MaxVehiclesPerBay = Convert.ToInt32(addUser.BayConfigs[i].vehiclesperbay);
-                                parkingbayno.UpdatedBy = 1;
+                                parkingbayno.UpdatedBy = user.Id;
                                 parkingbayno.UpdatedOn = DateTime.Now;
                                 _dbContext.ParkingBayNos.Update(parkingbayno);
                                 _dbContext.SaveChanges();
@@ -733,12 +990,13 @@ namespace LabelPad.Repository.UserManagement
                                     if (addUser.BayConfigs[i].vehiclereg != "")
                                     {
                                         vr = new VehicleRegistration();
-
+                                        
                                         vr.IsActive = true;
                                         vr.IsDeleted = false;
                                         vr.RegisterUserId = isParking.RegisterUserId;
                                         vr.VRM = addUser.BayConfigs[i].vehiclereg;
                                         vr.CreatedOn = DateTime.Now;
+                                        vr.IsSaveCount = 1;
                                         vr.CreatedBy = 1;
                                         vr.StartDate = Convert.ToDateTime(startdate1);
                                         vr.EndDate = Convert.ToDateTime(enddate1);
@@ -785,7 +1043,7 @@ namespace LabelPad.Repository.UserManagement
                                         if (iscancelwhitelist == true)
                                         {
                                             Cancelwhitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
-                                            whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
+                                          //  whitelistvehicle(Convert.ToInt32(addUser.SiteId), regvrm);
 
                                         }
                                         else
@@ -804,33 +1062,111 @@ namespace LabelPad.Repository.UserManagement
 
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-
-            }
+            
             return new { Message = "User saved successfully" };
         }
 
+        //public async Task<dynamic> DeleteUser(int Id)
+        //{
+        //    RegisterUser user = await _dbContext.RegisterUsers
+        //        .Where(x => x.IsDeleted == false && x.Id == Id)
+        //        .FirstOrDefaultAsync();
+
+        //    if (user != null)
+        //    {
+        //        user.IsDeleted = true;
+        //        user.IsActive = false;
+        //        user.UpdatedOn = DateTime.Now;
+
+        //        _dbContext.RegisterUsers.Update(user);
+        //        await _dbContext.SaveChangesAsync();
+        //        var parkingBayRecords = await _dbContext.ParkingBayNos
+        //            .Where(x => x.RegisterUserId == Id || x.UpdatedBy == Id)
+        //            .ToListAsync();
+
+        //        foreach (var record in parkingBayRecords)
+        //        {
+        //            if (record.RegisterUserId == Id)
+        //                record.RegisterUserId = 0;
+        //                 record.Status = false;
+        //            if (record.UpdatedBy == Id)
+        //                record.UpdatedBy = 0;
+        //                 record.Status = false;
+        //            record.UpdatedOn = DateTime.Now;
+        //        }
+
+        //        _dbContext.ParkingBayNos.UpdateRange(parkingBayRecords);
+        //        await _dbContext.SaveChangesAsync();
+
+        //        return new { Message = "User deleted successfully and ParkingBayNos updated" };
+        //    }
+        //    else
+        //    {
+        //        return new { Message = "No data found" };
+        //    }
+        //}
 
         public async Task<dynamic> DeleteUser(int Id)
         {
-            RegisterUser user = await _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == Id).FirstOrDefaultAsync();
+            RegisterUser user = await _dbContext.RegisterUsers
+                .Where(x => x.IsDeleted == false && x.Id == Id)
+                .FirstOrDefaultAsync();
+
             if (user != null)
             {
                 user.IsDeleted = true;
                 user.IsActive = false;
                 user.UpdatedOn = DateTime.Now;
+
                 _dbContext.RegisterUsers.Update(user);
                 await _dbContext.SaveChangesAsync();
-                return new { Message = "User deleted successfully" };
 
+                // *Update ParkingBayNos Table*
+                var parkingBayRecords = await _dbContext.ParkingBayNos
+                    .Where(x => x.RegisterUserId == Id || x.UpdatedBy == Id)
+                    .ToListAsync();
+
+                foreach (var record in parkingBayRecords)
+                {
+                    if (record.RegisterUserId == Id)
+                        record.RegisterUserId = 0;
+
+                    if (record.UpdatedBy == Id)
+                        record.UpdatedBy = 0;
+
+                    record.Status = false;
+                    record.UpdatedOn = DateTime.Now;
+                }
+
+                _dbContext.ParkingBayNos.UpdateRange(parkingBayRecords);
+                await _dbContext.SaveChangesAsync();
+
+                var vehicleRecords = await _dbContext.VehicleRegistrations
+                    .Where(x => x.RegisterUserId == Id || x.UpdatedBy == Id)
+                    .ToListAsync();
+
+                foreach (var record in vehicleRecords)
+                {
+                    if (record.RegisterUserId == Id)
+                        record.RegisterUserId = 0;
+
+                    if (record.UpdatedBy == Id)
+                        record.UpdatedBy = 0;
+
+                    record.UpdatedOn = DateTime.Now;
+                }
+
+                _dbContext.VehicleRegistrations.UpdateRange(vehicleRecords);
+                await _dbContext.SaveChangesAsync();
+
+                return new { Message = "User deleted successfully and related records updated" };
             }
             else
             {
                 return new { Message = "No data found" };
             }
         }
+
 
         public bool GetExistsTenantUser(AddTenantUser addUserAc)
         {
@@ -840,12 +1176,12 @@ namespace LabelPad.Repository.UserManagement
         }
         public bool GetExistsUser(AddUserAc addUserAc)
         {
-            RegisterUser user = _dbContext.RegisterUsers.FirstOrDefault(x => (x.Email == addUserAc.Email || x.MobileNumber == addUserAc.ContactNumber) && x.IsDeleted == false && x.RoleId == addUserAc.RoleId);
+            RegisterUser user = _dbContext.RegisterUsers.FirstOrDefault(x => (x.Email == addUserAc.Email || x.MobileNumber == addUserAc.ContactNumber) && x.IsDeleted == false);
             return (user != null);
 
         }
         public async Task<dynamic> GetTenantUserById(int Id)
-        {
+          {
             int siteId = 0;
             var user1 = _dbContext.RegisterUsers.FirstOrDefault(x => x.Id == Id);
             if (user1 != null)
@@ -876,6 +1212,7 @@ namespace LabelPad.Repository.UserManagement
                             r.LastName,
                             r.MobileNumber,
                             r.ParentId,
+                            r.IsApproved,
                             r.ParkingBay,
                             r.RoleId,
                             r.SiteId,
@@ -885,7 +1222,9 @@ namespace LabelPad.Repository.UserManagement
                             r.IdentityProofId,
                             r.UpdateEnddate,
                             BaysConfig = (from c in _dbContext.ParkingBayNos
-                                          where c.RegisterUserId == Id && c.IsActive == true && c.IsDeleted == false
+                                          where (c.RegisterUserId == Id || c.UpdatedBy == Id)
+
+                         && c.IsActive == true && c.IsDeleted == false
                                           select new
                                           {
                                               bayconfigid = c.Id,
@@ -899,16 +1238,20 @@ namespace LabelPad.Repository.UserManagement
                                               c.EndDate,
 
                                               // Fetch only vehicles for the corresponding bay
-                                              vehiclereg = (from z in _dbContext.VehicleRegistrations
-                                                            where z.RegisterUserId == Id && z.IsActive == true && z.IsDeleted == false
-                                                            && z.ParkingBayNo == c.Id
-                                                            select new
-                                                            {
-                                                                z.VRM,
-                                                            }).ToList(),
+                                              //vehiclereg = (from z in _dbContext.VehicleRegistrations
+                                              //              where z.RegisterUserId == Id && z.IsActive == true && z.IsDeleted == false
+                                              //              && z.ParkingBayNo == c.Id
+                                              //              select new 
+                                              //              {
+                                              //                  z.VRM,
+                                              //              }).ToList(),
+                                               vehiclereg = _dbContext.VehicleRegistrations
+                                                .Where(z => z.RegisterUserId == Id && z.IsActive && !z.IsDeleted && z.ParkingBayNo == c.Id)
+                                                 .Select(z => z.VRM)
+                                                 .ToList(),
 
-                                              // Fetch only bay numbers related to this bayconfig
-                                              baynos = (from b in _dbContext.ParkingBayNos
+            // Fetch only bay numbers related to this bayconfig
+            baynos = (from b in _dbContext.ParkingBayNos
                                                         where b.IsActive == true && b.IsDeleted == false
                                                         && b.Id == c.Id // Ensure only related bay is included
                                                         select new
@@ -1034,7 +1377,9 @@ namespace LabelPad.Repository.UserManagement
                                       pageNo = PageNo,
                                       l.Id,
                                       l.FirstName,
+                                     
                                       l.LastName,
+                                      l.IsApproved,
                                       l.Email,
                                       l.MobileNumber,
                                       l.RoleId,
@@ -1063,7 +1408,9 @@ namespace LabelPad.Repository.UserManagement
                                      pageNo = PageNo,
                                      l.Id,
                                      l.FirstName,
+                                    
                                      l.LastName,
+                                     l.IsApproved,
                                      l.Email,
                                      l.MobileNumber,
                                      l.RoleId,
@@ -1096,7 +1443,9 @@ namespace LabelPad.Repository.UserManagement
                                  pageNo = PageNo,
                                  l.Id,
                                  l.FirstName,
+                                
                                  l.LastName,
+                                 l.IsApproved,
                                  l.Email,
                                  l.MobileNumber,
                                  l.RoleId,
@@ -1156,6 +1505,7 @@ namespace LabelPad.Repository.UserManagement
                         LastName = ds.Tables[0].Rows[i]["LastName"].ToString(),
                         MobileNumber = ds.Tables[0].Rows[i]["MobileNumber"].ToString(),
                         SiteName = ds.Tables[0].Rows[i]["SiteName"].ToString(),
+
                         VRM = ds.Tables[0].Rows[i]["VRM"].ToString()
                     });
                 }
@@ -1262,6 +1612,9 @@ namespace LabelPad.Repository.UserManagement
                                  {
                                      l.Id,
                                      l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
                                      l.LastName,
                                      l.Email,
                                      l.MobileNumber,
@@ -1276,7 +1629,75 @@ namespace LabelPad.Repository.UserManagement
                     users = users.Skip(count2).Take(count1).ToList();
                     return users;
                 }
+            
 
+            }
+
+            else if(RoleId == 17)
+            {
+                if (SiteId == 0)
+                {
+                    var operatorId = _dbContext.RegisterUsers
+                    .Where(x => x.IsDeleted == false && x.Id == LoginId && x.IsOperator == true)
+                    .Select(x => x.OperatorId)
+                    .FirstOrDefault();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.IsOperator == true).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+                                 where l.IsDeleted == false && l.RoleId == RoleId && l.RoleId != 2 && operatorId == l.OperatorId && l.IsOperator == true
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? "NA" : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                }
+                else
+                {
+                    var operatorId = _dbContext.RegisterUsers
+                   .Where(x => x.IsDeleted == false && x.Id == LoginId && x.IsOperator == true)
+                   .Select(x => x.OperatorId)
+                   .FirstOrDefault();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.SiteId == SiteId && x.IsOperator == true).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+                                 join s in _dbContext.Sites on l.SiteId equals s.Id
+                                 where l.IsDeleted == false && l.RoleId == RoleId && s.Id == SiteId && l.RoleId != 2 && operatorId == l.OperatorId && l.IsOperator == true
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     s.SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                }
             }
             else
             {
@@ -1292,6 +1713,9 @@ namespace LabelPad.Repository.UserManagement
                                  {
                                      l.Id,
                                      l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
                                      l.LastName,
                                      l.Email,
                                      l.MobileNumber,
@@ -1317,6 +1741,216 @@ namespace LabelPad.Repository.UserManagement
                                  {
                                      l.Id,
                                      l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     s.SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                }
+            }
+        }
+
+
+        public async Task<dynamic> GetSiteUser(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId)
+        {
+
+            int count1 = PageSize;
+            int count2 = count1 * PageNo - count1;
+            if (RoleId == 1)
+            {
+                
+
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2 && x.IsSiteUser == true).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+
+                                 where l.IsDeleted == false && l.RoleId != 2 && l.IsSiteUser == true 
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? "NA" : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                
+
+            }
+            else
+            {
+                if (SiteId == 0)
+                {
+                    var operatordet = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == LoginId).FirstOrDefault();
+
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.IsSiteUser == true).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+                                 where l.IsDeleted == false && l.OperatorId == operatordet.OperatorId && l.RoleId != 2 && l.IsSiteUser == true
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? "NA" : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                }
+                else
+                {
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.SiteId == SiteId && x.IsSiteUser == true).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+                                 join s in _dbContext.Sites on l.SiteId equals s.Id
+                                 where l.IsDeleted == false && l.RoleId == RoleId && s.Id == SiteId && l.RoleId != 2 && l.IsSiteUser == true
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     s.SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                }
+            }
+        }
+
+        public async Task<dynamic> GetOpeartoruser(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId)
+        {
+
+            int count1 = PageSize;
+            int count2 = count1 * PageNo - count1;
+            if (RoleId == 1)
+            {
+              
+
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId != 2 && x.IsOperator == true).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+
+                                 where l.IsDeleted == false && l.RoleId != 2 && l.IsOperator==true
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? "NA" : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                
+
+            }
+            else
+            {
+                if (SiteId == 0)
+                {
+                    var operatorId = _dbContext.RegisterUsers
+                    .Where(x => x.IsDeleted == false && x.Id == LoginId && x.IsOperator == true)
+                    .Select(x => x.OperatorId)
+                    .FirstOrDefault();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.IsOperator == true).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+                                 where l.IsDeleted == false && l.RoleId == RoleId && l.RoleId != 2 && operatorId == l.OperatorId && l.IsOperator == true
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
+                                     l.LastName,
+                                     l.Email,
+                                     l.MobileNumber,
+                                     l.RoleId,
+                                     RoleName = r.Name,
+                                     TotalItem = totalitems,
+                                     TotalPage = totalpage + 1,
+                                     SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? "NA" : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
+                                 }).OrderByDescending(x => x.Id).ToList();
+                    users = users.Skip(count2).Take(count1).ToList();
+                    return users;
+                }
+                else
+                {
+                    var operatorId = _dbContext.RegisterUsers
+                   .Where(x => x.IsDeleted == false && x.Id == LoginId && x.IsOperator == true)
+                   .Select(x => x.OperatorId)
+                   .FirstOrDefault();
+                    int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == RoleId && x.SiteId == SiteId && x.IsOperator == true).Count();
+                    double totalpa = (double)totalitems / (double)PageSize;
+                    double totalpage = Math.Round(totalpa);
+                    var users = (from l in _dbContext.RegisterUsers
+                                 join r in _dbContext.Roles on l.RoleId equals r.Id
+                                 join s in _dbContext.Sites on l.SiteId equals s.Id
+                                 where l.IsDeleted == false && l.RoleId == RoleId && s.Id == SiteId && l.RoleId != 2 && operatorId == l.OperatorId && l.IsOperator == true
+                                 select new
+                                 {
+                                     l.Id,
+                                     l.FirstName,
+                                     l.IsMicrosoftAccount,
+                                     l.IsOperator,
+                                     l.OperatorId,
                                      l.LastName,
                                      l.Email,
                                      l.MobileNumber,
@@ -1395,47 +2029,190 @@ namespace LabelPad.Repository.UserManagement
             }
             return new { Message = "Updated Successfully" };
         }
+        //public async Task<dynamic> UpdateProfileUploads(UpdateRegisterUserAc objinput)
+        //{
+
+
+
+        //        int Id = objinput.Id;
+        //        RegisterUser user = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == Id).FirstOrDefault();
+        //        if (user != null)
+        //        {
+        //            if (objinput.ResidencyProof != null)
+        //            {
+        //                user.ResidencyProofId = objinput.ResidencyProof;
+        //            }
+
+        //            if (objinput.IdentityProof != null)
+        //            {
+        //                user.IdentityProofId = objinput.IdentityProof;
+        //            }
+
+        //            user.IsActive = true;
+        //            _dbContext.RegisterUsers.Update(user);
+        //            _dbContext.SaveChanges();
+
+        //        }
+        //        return new { Message = "Updated Successfully" };
+
+
+
+        //}
+
         public async Task<dynamic> UpdateProfileUploads(UpdateRegisterUserAc objinput)
         {
-            try
+            int Id = objinput.Id;
+            RegisterUser user = _dbContext.RegisterUsers
+                .Where(x => x.IsDeleted == false && x.Id == Id)
+                .FirstOrDefault();
+
+            if (user != null)
             {
-
-
-                int Id = objinput.Id;
-                RegisterUser user = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == Id).FirstOrDefault();
-                if (user != null)
+                if (objinput.ResidencyProof != null)
                 {
-                    if (objinput.ResidencyProof != null)
-                    {
-                        user.ResidencyProofId = objinput.ResidencyProof;
-                    }
-
-                    if (objinput.IdentityProof != null)
-                    {
-                        user.IdentityProofId = objinput.IdentityProof;
-                    }
-
-                    user.IsActive = true;
-                    _dbContext.RegisterUsers.Update(user);
-                    _dbContext.SaveChanges();
-
+                    user.ResidencyProofId = objinput.ResidencyProof;
                 }
-                return new { Message = "Updated Successfully" };
 
+                if (objinput.IdentityProof != null)
+                {
+                    user.IdentityProofId = objinput.IdentityProof;
+                }
+
+                user.IsActive = true;
+                _dbContext.RegisterUsers.Update(user);
+                _dbContext.SaveChanges();
+
+
+
+                var folderNameObj = Path.Combine("EmailHtml", "AdminUploadDocuments.html");
+                var filePathObj = Path.Combine(Directory.GetCurrentDirectory(), folderNameObj);
+
+                StreamReader reader = new StreamReader(filePathObj);
+
+                string readFile = reader.ReadToEnd();
+                string myString = "";
+                myString = readFile;
+                string dt = DateTime.Now.ToString("MM.dd.yyyy");
+                myString = myString.Replace("%{#{Datetime}#}%", dt);
+                myString = myString.Replace("%{#{Name}#}%", user.FirstName + " " + user.LastName);
+                string body = myString;
+
+                bool emailSent =await SendEmailAsync(_configuration["AdminTenantMail"], user.FirstName, "Tenant Verification", body, "GOPERMIT_Tenant Verification");
+
+                //bool emailSent = SendEmail(_configuration["AdminTenantMail"], "Go Permit New Customer Application", body, "Go Permit New Customer Application");
+               
+                if (!emailSent)
+                {
+                    return new { Message = "Profile updated, but email sending failed" };
+                }
+
+                return new { Message = "Updated Successfully and Email Sent" };
             }
 
-
-            catch (Exception ex)
-            {
-                return new { Message = "Error occurred", Error = ex.Message };
-            }
-
+            return new { Message = "User Not Found" };
         }
+
+        //public async Task<bool> SendEmailAdminAsync(string EmailId, string Subject, string Body, string Headeraname)
+        //{
+        //    try
+        //    {
+        //        // Get OAuth credentials from appsettings.json
+        //        string clientId = _configuration["OAuthClientId"];
+        //        string clientSecret = _configuration["OAuthClientSecret"];
+        //        string refreshToken = _configuration["OAuthRefreshToken"];
+
+        //        // Get Access Token using the Refresh Token
+        //        string accessToken = await GetAccessToken(clientId, clientSecret, refreshToken);
+
+        //        if (string.IsNullOrEmpty(accessToken))
+        //        {
+        //            throw new Exception("Failed to retrieve access token.");
+        //        }
+
+        //        using (SmtpClient client = new SmtpClient())
+        //        {
+        //            client.Host = _configuration["Host"]; // smtp.gmail.com
+        //            client.Port = Convert.ToInt32(_configuration["Port"]); // 587
+        //            client.EnableSsl = true;
+        //            client.UseDefaultCredentials = false;
+
+        //            // Use OAuth2 authentication instead of password
+        //            client.Credentials = new NetworkCredential(_configuration["AdminMail"], accessToken);
+
+        //            MailMessage mailMessage = new MailMessage
+        //            {
+        //                From = new MailAddress(_configuration["AdminMail"], Headeraname),
+        //                Subject = Subject,
+        //                Body = Body,
+        //                IsBodyHtml = true
+        //            };
+
+        //            mailMessage.To.Add(new MailAddress(EmailId));
+
+        //            client.Send(mailMessage);
+        //            return true;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine("Error sending email: " + ex.Message);
+        //        return false;
+        //    }
+        //}
+
+
+        public async Task<bool> SendEmailAdminAsync(string EmailId, string Subject, string Body, string Headeraname)
+        {
+
+            string accessToken = await GetAccessTokenAsync(); // Get OAuth2 access token
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(Headeraname, _configuration["EmailSettings:AdminMail"]));
+            message.To.Add(new MailboxAddress("", EmailId));
+            message.Subject = Subject;
+
+            var bodyBuilder = new BodyBuilder { HtmlBody = Body };
+            message.Body = bodyBuilder.ToMessageBody();
+
+            using var client = new MailKit.Net.Smtp.SmtpClient();
+            await client.ConnectAsync(_configuration["EmailSettings:SMTP_Host"], Convert.ToInt32(_configuration["EmailSettings:SMTP_Port"]), SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(new SaslMechanismOAuth2(_configuration["EmailSettings:Username"], accessToken));
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
+
+            return true;
+
+            
+        }
+        public async Task<dynamic> UpdateOperatorLogoUploads(OperatorLogoRequest objinput)
+        {
+            int Id = objinput.Id;
+            RegisterUser user = _dbContext.RegisterUsers
+                .Where(x => x.IsDeleted == false && x.Id == Id)
+                .FirstOrDefault();
+
+            if (user != null)
+            {
+                if (objinput.OperatorLogo != null)
+                {
+                    user.OperatorLogo = objinput.OperatorLogo;
+                }
+
+                user.IsActive = true;
+                _dbContext.RegisterUsers.Update(user);
+                _dbContext.SaveChanges();
+
+               
+                return new { Message = "Updated Successfully" };
+            }
+
+            return new { Message = "User Not Found" };
+        }
+
 
         public async Task<dynamic> UpdateUserStatus(int Id)
         {
-            try
-            {
+            
                 var user = _dbContext.RegisterUsers
                     .Where(x => !x.IsDeleted && x.Id == Id)
                     .FirstOrDefault();
@@ -1452,21 +2229,101 @@ namespace LabelPad.Repository.UserManagement
                 await _dbContext.SaveChangesAsync();
 
                 return new { Message = "User status updated successfully" };
-            }
-            catch (Exception ex)
-            {
-                return new { Message = "Error occurred", Error = ex.Message };
-            }
+           
         }
 
-        public async Task<dynamic> UpdateTenantUser(AddTenantUser addUserAc)
+        public async Task<dynamic> UpdateTenantUser_New(AddTenantUser addUserAc)
         {
-            bool iscancelwhitelist = false;
+            RegisterUser user = _dbContext.RegisterUsers
+                .Where(x => x.IsDeleted == false && x.Id == addUserAc.Id)
+                .FirstOrDefault();
 
-
-            RegisterUser user = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.Id == addUserAc.Id).FirstOrDefault();
             if (user != null)
             {
+                bool bFlag = UpdateUserInTenant(addUserAc, user);
+                // Check if a record exists in the VehicleRegistration table for the given user
+                var existingVehicle = _dbContext.VehicleRegistrations
+                    .Where(v => v.RegisterUserId == user.Id)
+                    .ToList();
+
+
+                //if (existingVehicle != null && existingVehicle.Count > 0)
+                //{
+                //    foreach (var item in existingVehicle)
+                //    {
+                //        item.IsDeleted = true;
+                //        item.IsActive = false;
+                //        item.UpdatedOn = DateTime.Now;
+                //        item.UpdatedBy = user.Id;
+                //        _dbContext.VehicleRegistrations.Update(item);
+                //        await _dbContext.SaveChangesAsync();
+                //    }
+
+                //}
+                for (int i = 0; i < addUserAc.BayConfigs.Count; i++)
+                {
+                    var bayConfig = addUserAc.BayConfigs[i];
+
+                    
+                    int bayno = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
+                    //var newVehicle = new VehicleRegistration();
+                    //newVehicle.IsActive = true;
+                    //newVehicle.IsDeleted = false;
+                    //newVehicle.IsSaveCount = 1;
+                    //newVehicle.RegisterUserId = user.Id;
+                    //newVehicle.VRM = addUserAc.BayConfigs[i].vehiclereg;
+                    //newVehicle.CreatedOn = DateTime.Now;
+                    //newVehicle.CreatedBy = addUserAc.ParentId;
+                    // newVehicle.StartDate = Convert.ToDateTime(bayConfig.StartDate);
+                    //newVehicle.EndDate = Convert.ToDateTime(bayConfig.EndDate);
+                    //newVehicle.ParkingBayNo = bayno;
+
+                    //_dbContext.VehicleRegistrations.Add(newVehicle);
+                    //await _dbContext.SaveChangesAsync();
+                    var parkingBay = _dbContext.ParkingBayNos
+               .Where(pb => pb.Id == bayno && pb.IsDeleted == false && pb.IsActive == true)
+               .FirstOrDefault();
+
+                    if (parkingBay != null)
+                    {
+                        parkingBay.Status = true;
+                        parkingBay.StartDate = Convert.ToDateTime(addUserAc.BayConfigs[i].StartDate);
+                        parkingBay.EndDate = Convert.ToDateTime(addUserAc.BayConfigs[i].EndDate);
+                        parkingBay.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
+                        parkingBay.IsActive = true;
+                        parkingBay.IsDeleted = false;
+                        parkingBay.UpdatedBy = user.Id;
+                        parkingBay.UpdatedOn = DateTime.Now;
+                        _dbContext.ParkingBayNos.Update(parkingBay);
+                        await _dbContext.SaveChangesAsync();
+                    }
+
+                    //if (!string.IsNullOrEmpty(bayConfig.dates))
+                    //{
+                    //    savemutliplevehciledates(newVehicle.Id, bayConfig.dates, newVehicle.StartDate, newVehicle.EndDate, 0, user.Id, bayno);
+                    //}
+                    //else
+                    //{
+                    //    savemutliplevehciletime(newVehicle.Id, newVehicle.StartDate, newVehicle.EndDate, 0);
+                    //}
+
+                    //whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), newVehicle.VRM);
+
+
+                }
+
+                return new { Message = "Tenant user updated successfully" };
+            }
+
+            return new { Message = "No data found" };
+        }
+
+
+        private bool UpdateUserInTenant(AddTenantUser addUserAc, RegisterUser user)
+        {
+
+           
+
                 user.FirstName = addUserAc.FirstName;
                 user.LastName = addUserAc.LastName;
                 user.HouseOrFlatNo = addUserAc.HouseOrFlatNo;
@@ -1493,513 +2350,10 @@ namespace LabelPad.Repository.UserManagement
                 }
                 _dbContext.RegisterUsers.Update(user);
                 _dbContext.SaveChanges();
-              
-                for (int i = 0; i < addUserAc.BayConfigs.Count; i++)
-                {
 
-                    string startdate1 = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                    string enddate1 = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                    int siteid1 = Convert.ToInt32(addUserAc.SiteId);
-                    var parkingbayno1 = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid && x.SiteId == siteid1).FirstOrDefault();
-                    //int bayid = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
-                    int bayconfigid = Convert.ToInt32(addUserAc.BayConfigs[i].bayconfigid);
-                    int number = 0;
-                    var parkingbay = new ParkingBayNo();
+                return true;
+           
 
-
-                    if (addUserAc.BayConfigs[i].bayconfigid != 0)
-                    {
-                        bool isbay = int.TryParse(addUserAc.BayConfigs[i].bayid, out number);
-                        if (isbay)
-                        {
-                            int bayid = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
-                            parkingbay = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == bayid && x.RegisterUserId == user.Id && x.SiteId == siteid1).FirstOrDefault();
-                        }
-                        else
-                        {
-                            //changes start
-                            var vehicleregistration = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.ParkingBayNo == bayconfigid).FirstOrDefault();
-                            if (vehicleregistration == null)
-                            {
-                                //changes end
-                                parkingbay = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == bayconfigid && x.RegisterUserId == user.Id && x.SiteId == siteid1).FirstOrDefault();
-                                if (parkingbay != null)
-                                {
-                                    parkingbay.RegisterUserId = user.Id;
-                                    parkingbay.IsActive = false;
-                                    parkingbay.IsDeleted = true;
-                                    parkingbay.UpdatedBy = 1;
-                                    parkingbay.UpdatedOn = DateTime.Now;
-                                    _dbContext.ParkingBayNos.Update(parkingbay);
-                                    _dbContext.SaveChanges();
-                                }
-                                //changes start
-                                //parkingbay = null;
-                                //changes end
-
-                            }
-
-                        }
-                    }
-                    else
-                    {
-                        parkingbay = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid && x.RegisterUserId == user.Id && x.SiteId == siteid1).FirstOrDefault();
-                    }
-                    if (parkingbay != null)
-                    {
-                        // var vehicleregitration = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.ParkingBayNo == parkingbay.Id ).FirstOrDefault();
-                        //changes start
-                        var vehicleregitration = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.ParkingBayNo == bayconfigid).FirstOrDefault();
-                        //changes End
-                        if (vehicleregitration == null)
-                        {
-                            if (parkingbay.RegisterUserId != 0)
-                            {
-                                string startdate = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                                string enddate = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                                parkingbay.RegisterUserId = user.Id;
-                                parkingbay.IsActive = false;
-                                parkingbay.IsDeleted = true;
-                                parkingbay.UpdatedBy = 1;
-                                parkingbay.UpdatedOn = DateTime.Now;
-                                _dbContext.ParkingBayNos.Update(parkingbay);
-                                _dbContext.SaveChanges();
-                                ParkingBayNo bayno = new ParkingBayNo();
-                                bayno.IsActive = true;
-                                bayno.IsDeleted = false;
-                                bayno.ParkingBayId = parkingbay.ParkingBayId;
-                                bayno.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                                bayno.RegisterUserId = user.Id;
-                                bayno.Section = parkingbay.Section;
-                                bayno.BayName = parkingbay.BayName;
-                                bayno.StartDate = Convert.ToDateTime(startdate);
-                                bayno.EndDate = Convert.ToDateTime(enddate);
-                                bayno.CreatedBy = 1;
-                                bayno.CreatedOn = DateTime.Now;
-                                bayno.SiteId = parkingbay.SiteId;
-                                _dbContext.ParkingBayNos.Add(bayno);
-                                _dbContext.SaveChanges();
-                                if (addUserAc.BayConfigs[i].vehiclereg != "")
-                                {
-                                    var Issavecount = 1;
-                                   
-                                    var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).FirstOrDefault();
-                                    if (isParking != null)
-                                    {
-
-                                        VehicleRegistration vr = new VehicleRegistration();
-                                        vr.IsActive = true;
-                                        vr.IsDeleted = false;
-                                        vr.RegisterUserId = isParking.RegisterUserId;
-                                        vr.VRM = addUserAc.BayConfigs[i].vehiclereg;
-                                        vr.CreatedOn = DateTime.Now;
-                                        vr.CreatedBy = 1;
-                                        vr.StartDate = Convert.ToDateTime(startdate1);
-                                        vr.EndDate = Convert.ToDateTime(enddate1);
-                                        vr.ParkingBayNo = isParking.Id;
-                                        _dbContext.VehicleRegistrations.Add(vr);
-                                        _dbContext.SaveChanges();
-                                    }
-                                    var vehicleregistered = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
-                                    if (vehicleregistered != null)
-                                    {
-                                        var Id = vehicleregistered.Id;
-                                        var id = vehicleregistered.RegisterUserId;
-                                        var bayno1 = isParking.Id;
-                                        // var siteparkingbayno = vehicleregistered.ParkingBayNo;
-                                        DateTime StartDate = addUserAc.BayConfigs[i].StartDate;
-                                        DateTime EndDate = addUserAc.BayConfigs[i].EndDate;
-                                        //bool issentzatpark = false;
-                                        if (addUserAc.BayConfigs[i].dates != "")
-                                        {
-                                            //savemutliplevehciledates(addUserAc.Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, Issavecount, id, Convert.ToInt32(bayno));
-                                            savemutliplevehciledates(Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, 0, id, bayno1);
-
-                                        }
-                                        else
-                                        {
-                                            savemutliplevehciletime(Id, StartDate, EndDate, 0);
-                                        }
-
-                                        //if (iscancelwhitelist==true)
-                                        //{
-                                        //    Cancelwhitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-                                        //    whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-
-                                        //}
-                                        //else
-                                        //{
-                                        whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-                                        //}
-
-
-                                    }
-
-                                }
-
-
-                            }
-                            else
-                            {
-
-                            }
-                        }
-                        else
-                        {
-                           
-                            //changes start
-                            var Issavecount = 1;
-                            int id = addUserAc.Id;
-                            bool updatevehicle = false;
-                            int bayno = Convert.ToInt32(addUserAc.BayConfigs[i].bayconfigid);
-                            var vehicleregistration = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == id && x.ParkingBayNo == bayno && x.IsDeleted == false && x.IsActive == true).OrderByDescending(x => x.Id).FirstOrDefault();
-                            if (vehicleregistration != null)
-                            {
-                                if (vehicleregistration.RegisterUserId == id)
-                                {
-                                    updatevehicle = true;
-                                }
-                                else
-                                {
-
-                                    if (vehicleregistration.RegisterUserId == 0)
-                                    {
-                                        updatevehicle = true;
-                                    }
-                                    else
-                                    {
-                                        updatevehicle = false;
-
-                                        return new { Message = "Can not be updated as the the bayname is already booked for respective dates" };
-                                    }
-
-                                }
-                                if (updatevehicle == true)
-                                {
-                                    //var issentzatpark = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().ParkingBayNo;
-                                    var siteparkingbayno = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().ParkingBayNo;
-                                    var vrmcompare = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == id && x.ParkingBayNo == siteparkingbayno).FirstOrDefault();
-                                    var oldvrm = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == id && x.ParkingBayNo == siteparkingbayno).FirstOrDefault().VRM;
-
-                                    if (vrmcompare != null)
-                                    {
-                                        if (addUserAc.BayConfigs[i].StartDate == vrmcompare.StartDate && addUserAc.BayConfigs[i].EndDate == vrmcompare.EndDate && addUserAc.BayConfigs[i].vehiclereg == vrmcompare.VRM)
-                                        {
-                                            iscancelwhitelist = false;
-                                        }
-                                        else
-                                        {
-                                            iscancelwhitelist = true;
-                                        }
-
-                                    }
-                                    else
-                                    {
-                                        iscancelwhitelist = false;
-                                    }
-                                    int parkingbayno = vehicleregistration.ParkingBayNo;
-                                    var parkingbaynos = _dbContext.ParkingBayNos.Where(x => x.Id == parkingbayno).FirstOrDefault();
-                                    if (parkingbaynos != null)
-                                    {
-                                        int maxvehicle = parkingbaynos.MaxVehiclesPerBay;
-                                        if (maxvehicle == 1)
-                                        {
-                                            if (iscancelwhitelist == true)
-                                            {
-                                                Cancelwhitelistvehicle(Convert.ToInt32(addUserAc.SiteId), oldvrm);
-                                            }
-                                            int vehicleregistrationid = vehicleregistration.Id;
-                                            var timeslots = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.VehicleRegistrationId == vehicleregistrationid).ToList();
-                                            if (timeslots != null)
-                                            {
-                                                timeslots.ForEach(x =>
-                                                {
-                                                    x.IsActive = false;
-                                                    x.IsDeleted = true;
-                                                    x.UpdatedBy = x.CreatedBy;
-                                                    x.UpdatedOn = DateTime.Now;
-                                                });
-                                                _dbContext.VehicleRegistrationTimeSlots.UpdateRange(timeslots);
-                                                _dbContext.SaveChanges();
-                                                //changes started
-                                                if (vehicleregistration == null)
-                                                {
-                                                    //changes Ends
-                                                    vehicleregistration.IsActive = false;
-                                                    vehicleregistration.IsDeleted = true;
-                                                    vehicleregistration.UpdatedBy = 1;
-                                                    vehicleregistration.UpdatedOn = DateTime.Now;
-                                                    _dbContext.VehicleRegistrations.Update(vehicleregistration);
-                                                    _dbContext.SaveChanges();
-
-                                                }
-
-
-                                            }
-                                        }
-                                    }
-                                    var parkingbay1 = _dbContext.ParkingBayNos.Where(x => x.RegisterUserId == id && x.Id == bayno && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
-                                    if (parkingbay != null)
-                                    {
-                                        //parkingbay1.StartDate = Convert.ToDateTime(addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd"));
-                                        //parkingbay1.EndDate = Convert.ToDateTime(addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd"));
-                                        parkingbay1.StartDate = Convert.ToDateTime(addUserAc.BayConfigs[i].StartDate);
-                                        parkingbay1.EndDate = Convert.ToDateTime(addUserAc.BayConfigs[i].EndDate);
-                                        parkingbay1.UpdatedBy = 1;
-                                        parkingbay1.UpdatedOn = DateTime.Now;
-                                        _dbContext.ParkingBayNos.Update(parkingbay1);
-                                        _dbContext.SaveChanges();
-
-                                    }
-                                    if (addUserAc.BayConfigs[i].dates != "")
-                                    {
-                                        string[] values = addUserAc.BayConfigs[i].dates.Split(',');
-                                        //DateTime modifieddate = Convert.ToDateTime(date1.Year + "-" + date1.Month + "-" + date1.Day + " " + date2.Hour + ":" + date2.Minute);
-                                        for (int j = 0; j < values.Length; j++)
-                                        {
-                                            values[j] = values[j].Trim();
-                                            string testdate = values[j].Substring(0, 16);
-                                            DateTime testdate1 = Convert.ToDateTime(testdate);
-
-
-                                            var responce = (from b in _dbContext.VehicleRegistrations
-                                                            join pb in _dbContext.VehicleRegistrationTimeSlots on b.Id equals pb.VehicleRegistrationId
-                                                            where b.RegisterUserId == id && b.ParkingBayNo == Convert.ToInt32(bayno)
-                                                            && pb.FromDate.Date == (Convert.ToDateTime(testdate1).Date)
-
-                                                            select new
-                                                            {
-                                                                id = pb.Id,
-
-                                                            }).ToList();
-                                            if (responce != null)
-                                            {
-                                                responce.ForEach(a =>
-                                                {
-                                                    var visitorbayno = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == a.id).FirstOrDefault();
-                                                    if (visitorbayno != null)
-                                                    {
-                                                        visitorbayno.IsDeleted = true;
-                                                        visitorbayno.IsActive = false;
-                                                        visitorbayno.UpdatedOn = DateTime.Now;
-                                                        visitorbayno.UpdatedOn = DateTime.Now;
-                                                        _dbContext.VehicleRegistrationTimeSlots.Update(visitorbayno);
-                                                        _dbContext.SaveChanges();
-                                                    }
-
-
-                                                });
-                                            }
-                                        }
-                                        DateTime todaydate = DateTime.Now;
-                                        var vehilce = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == id && x.ParkingBayNo == bayno).ToList();
-                                        if (vehilce != null)
-                                        {
-
-                                            vehilce.ForEach(a =>
-                                            {
-                                                var timeslots = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.IsActive == true && x.IsDeleted == false && x.VehicleRegistrationId == a.Id && x.FromDate.Date > (todaydate.Date)).ToList();
-                                                if (timeslots != null)
-                                                {
-                                                    timeslots.ForEach(x =>
-                                                    {
-                                                        x.IsActive = false;
-                                                        x.IsDeleted = true;
-                                                        x.UpdatedBy = x.CreatedBy;
-                                                        x.UpdatedOn = DateTime.Now;
-                                                    });
-                                                    _dbContext.VehicleRegistrationTimeSlots.UpdateRange(timeslots);
-                                                    _dbContext.SaveChanges();
-                                                }
-
-
-                                                a.UpdatedOn = DateTime.Now;
-                                                a.EndDate = DateTime.Now;
-                                                _dbContext.VehicleRegistrations.Update(a);
-                                                _dbContext.SaveChanges();
-                                            });
-                                        }
-
-
-                                        DateTime StartDate = addUserAc.BayConfigs[i].StartDate;
-                                        DateTime EndDate = addUserAc.BayConfigs[i].EndDate;
-                                        var vehicleregistered = _dbContext.VehicleRegistrations.Where(x => x.ParkingBayNo == bayconfigid && x.RegisterUserId == id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
-                                        if (vehicleregistered != null)
-                                        {
-                                            vehicleregistered.UpdatedOn = DateTime.Now;
-                                            vehicleregistered.UpdatedBy = 1;
-                                            vehicleregistered.StartDate = StartDate;
-                                            vehicleregistered.EndDate = EndDate;
-                                            vehicleregistered.VRM = addUserAc.BayConfigs[i].vehiclereg;
-                                            vehicleregistered.IsActive = true;
-                                            vehicleregistered.IsDeleted = false;
-                                            vehicleregistered.RegisterUserId = parkingbay1.RegisterUserId;
-                                            vehicleregistered.ParkingBayNo = parkingbay1.Id;
-                                            vehicleregistered.IsSaveCount = Issavecount;
-                                            _dbContext.VehicleRegistrations.Update(vehicleregistered);
-                                            _dbContext.SaveChanges();
-                                        }
-                                        var vehicleregisteredup = _dbContext.VehicleRegistrations.Where(x => x.ParkingBayNo == bayconfigid && x.RegisterUserId == id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
-
-                                        var Id = vehicleregisteredup.Id;
-                                        if (addUserAc.BayConfigs[i].dates != "")
-                                        {
-                                            //savemutliplevehciledates(addUserAc.Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, Issavecount, id, Convert.ToInt32(bayno));
-                                            savemutliplevehciledates(Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, Issavecount, id, Convert.ToInt32(bayno));
-
-                                        }
-                                        else
-                                        {
-                                            savemutliplevehciletime(Id, StartDate, EndDate, Issavecount);
-                                        }
-
-                                        if (iscancelwhitelist == true)
-                                        {
-                                            //Cancelwhitelistvehicle(Convert.ToInt32(addUserAc.SiteId), oldvrm);
-                                            whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-
-                                        }
-                                        //else
-                                        //{
-                                        //    whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-                                        //}
-                                        //}
-
-                                    }
-                                    //else
-                                    //{
-
-                                    //}
-                                }
-                                else
-                                {
-                                    return new { Message = "Can not be updated as the the bayname is already booked for respective dates" };
-
-                                }
-                                //changes end
-
-                            }
-
-                        }
-
-                    }
-                    else
-                    {
-                        //var parkingbayno = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.BayName == addUserAc.BayConfigs[i].bayid).FirstOrDefault();
-                        int bayno2 = Convert.ToInt32(addUserAc.BayConfigs[i].bayid);
-
-                        var parkingbayno = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == bayno2 && x.SiteId == siteid1).FirstOrDefault();
-                        if (parkingbayno != null)
-                        {
-                           
-
-                            string startdate = addUserAc.BayConfigs[i].StartDate.ToString("yyyy-MM-dd");
-                            string enddate = addUserAc.BayConfigs[i].EndDate.ToString("yyyy-MM-dd");
-                            
-                            //var parkbay = _dbContext.ParkingBays.Where(x => x.IsActive == true && x.IsDeleted == false && x.SiteId == Convert.ToInt32(addUserAc.SiteId)).FirstOrDefault();
-                            //ParkingBayNo bayno = new ParkingBayNo();
-                            //bayno.IsActive = true;
-                            //bayno.IsDeleted = false;
-                            //bayno.ParkingBayId = parkbay.Id;
-                            //bayno.MaxVehiclesPerBay = Convert.ToInt32(addUserAc.BayConfigs[i].vehiclesperbay);
-                            //bayno.RegisterUserId = addUserAc.Id;
-                            //bayno.Section = Convert.ToString(parkbay.Section);
-                            //bayno.BayName = addUserAc.BayConfigs[i].bayid;
-                            //bayno.StartDate = Convert.ToDateTime(startdate);
-                            //bayno.EndDate = Convert.ToDateTime(enddate);
-                            //bayno.CreatedBy = 1;
-                            //bayno.CreatedOn = DateTime.Now;
-                            //bayno.SiteId = Convert.ToInt32(addUserAc.SiteId);
-                            //_dbContext.ParkingBayNos.Add(bayno);
-                            //_dbContext.SaveChanges();
-                            parkingbayno.StartDate = Convert.ToDateTime(addUserAc.BayConfigs[i].StartDate);
-                            parkingbayno.EndDate = Convert.ToDateTime(addUserAc.BayConfigs[i].EndDate);
-                            parkingbayno.RegisterUserId = addUserAc.Id;
-                            parkingbayno.UpdatedBy = 1;
-                            parkingbayno.UpdatedOn = DateTime.Now;
-                            _dbContext.ParkingBayNos.Update(parkingbayno);
-                            _dbContext.SaveChanges();
-                            if (addUserAc.BayConfigs[i].vehiclereg != "")
-                            {
-                                var siteparkingbayno = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault().ParkingBayNo;
-                                var vrmcompare = _dbContext.VehicleRegistrations.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == addUserAc.Id && x.ParkingBayNo == siteparkingbayno).FirstOrDefault();
-                                if (vrmcompare != null)
-                                {
-                                    if (addUserAc.BayConfigs[i].StartDate == vrmcompare.StartDate && addUserAc.BayConfigs[i].EndDate == vrmcompare.EndDate && addUserAc.BayConfigs[i].vehiclereg == vrmcompare.VRM)
-                                    {
-                                        iscancelwhitelist = false;
-                                    }
-                                    else
-                                    {
-                                        iscancelwhitelist = true;
-                                    }
-
-                                }
-                                else
-                                {
-                                    iscancelwhitelist = false;
-                                }
-                                var Issavecount = 1;
-                                var isParking = _dbContext.ParkingBayNos.Where(x => x.IsActive == true && x.IsDeleted == false && x.RegisterUserId == user.Id).FirstOrDefault();
-                                if (isParking != null)
-                                {
-
-                                    VehicleRegistration vr = new VehicleRegistration();
-                                    vr.IsActive = true;
-                                    vr.IsDeleted = false;
-                                    vr.RegisterUserId = isParking.RegisterUserId;
-                                    vr.VRM = addUserAc.BayConfigs[i].vehiclereg;
-                                    vr.CreatedOn = DateTime.Now;
-                                    vr.CreatedBy = 1;
-                                    vr.StartDate = Convert.ToDateTime(startdate1);
-                                    vr.EndDate = Convert.ToDateTime(enddate1);
-                                    vr.ParkingBayNo = parkingbayno.Id;
-                                    _dbContext.VehicleRegistrations.Add(vr);
-                                    _dbContext.SaveChanges();
-                                }
-                                var vehicleregistered = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == user.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
-                                if (vehicleregistered != null)
-                                {
-                                    var Id = vehicleregistered.Id;
-                                    var id = vehicleregistered.RegisterUserId;
-                                    var bayno1 = parkingbayno.Id;
-                                    DateTime StartDate = addUserAc.BayConfigs[i].StartDate;
-                                    DateTime EndDate = addUserAc.BayConfigs[i].EndDate;
-                                    //bool issentzatpark = false;
-                                    if (addUserAc.BayConfigs[i].dates != "")
-                                    {
-                                        //savemutliplevehciledates(addUserAc.Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, Issavecount, id, Convert.ToInt32(bayno));
-                                        savemutliplevehciledates(Id, addUserAc.BayConfigs[i].dates, StartDate, EndDate, 0, id, bayno1);
-
-                                    }
-                                    else
-                                    {
-                                        savemutliplevehciletime(Id, StartDate, EndDate, 0);
-                                    }
-                                    if (iscancelwhitelist == true)
-                                    {
-                                        Cancelwhitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-                                        whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-
-                                    }
-                                    else
-                                    {
-                                        whitelistvehicle(Convert.ToInt32(addUserAc.SiteId), vehicleregistered.VRM);
-                                    }
-                                }
-
-                            }
-
-                        }
-                    }
-                    
-                }
-                return new { Message = "User updated successfully" };
-            }
-            else
-            {
-                return new { Message = "No data Found" };
-            }
         }
 
         private async Task<bool> savemutliplevehciletime(int id, DateTime? startdate, DateTime? enddate, int issavecount)
@@ -2104,6 +2458,8 @@ namespace LabelPad.Repository.UserManagement
                 user.UpdatedOn = DateTime.Now;
                 user.SiteId = addUserAc.SiteId;
                 user.IsActive = addUserAc.Active;
+                user.OperatorId = addUserAc.OperatorId;
+                user.IsMicrosoftAccount = addUserAc.IsMicrosoftAccount;
                 _dbContext.RegisterUsers.Update(user);
                 await _dbContext.SaveChangesAsync();
                 return new { Message = "User updated successfully" };
@@ -2113,8 +2469,74 @@ namespace LabelPad.Repository.UserManagement
                 return new { Message = "No data Found" };
             }
         }
-        #region SendEmail1
-        /// <summary>
+
+        //public async Task<bool> SendEmailAsync(string EmailId, string User, string Subject, string Body, string Headeraname)
+        //{
+        //    try
+        //    {
+        //        // Get OAuth credentials from appsettings.json
+        //        string clientId = _configuration["OAuthClientId"];
+        //        string clientSecret = _configuration["OAuthClientSecret"];
+        //        string refreshToken = _configuration["OAuthRefreshToken"];
+
+        //        // Get Access Token using the Refresh Token
+        //        string accessToken = await GetAccessToken(clientId, clientSecret, refreshToken);
+
+        //        if (string.IsNullOrEmpty(accessToken))
+        //        {
+        //            throw new Exception("Failed to retrieve access token.");
+        //        }
+
+        //        using (SmtpClient client = new SmtpClient())
+        //        {
+        //            client.Host = _configuration["Host"]; // smtp.gmail.com
+        //            client.Port = Convert.ToInt32(_configuration["Port"]); // 587
+        //            client.EnableSsl = true;
+        //            client.UseDefaultCredentials = false;
+
+        //            // Use OAuth2 authentication
+        //            client.Credentials = new NetworkCredential(_configuration["AdminMail"], accessToken);
+        //            client.TargetName = "SMTPSVC"; // Required for OAuth2 with Gmail
+
+        //            MailMessage mailMessage = new MailMessage
+        //            {
+        //                From = new MailAddress(_configuration["AdminMail"], Headeraname),
+        //                Subject = Subject,
+        //                Body = Body,
+        //                IsBodyHtml = true
+        //            };
+
+        //            mailMessage.To.Add(new MailAddress(EmailId));
+
+        //            await client.SendMailAsync(mailMessage); // Use async version of SendMail
+        //            return true;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine("Error sending email: " + ex.Message);
+        //        return false;
+        //    }
+        //}
+
+        //private async Task<string> GetAccessToken(string clientId, string clientSecret, string refreshToken)
+        //{
+        //    var tokenRequest = new Google.Apis.Auth.OAuth2.Requests.RefreshTokenRequest
+        //    {
+        //        ClientId = clientId,
+        //        ClientSecret = clientSecret,
+        //        RefreshToken = refreshToken
+        //    };
+
+        //    var tokenResponse = await new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow(
+        //        new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow.Initializer
+        //        {
+        //            ClientSecrets = new ClientSecrets { ClientId = clientId, ClientSecret = clientSecret }
+        //        }).RefreshTokenAsync("user", refreshToken, System.Threading.CancellationToken.None);
+
+        //    return tokenResponse.AccessToken;
+        //}
+
         /// method to send the mail
         /// </summary>
         /// <param name="EmailId"></param>
@@ -2122,7 +2544,98 @@ namespace LabelPad.Repository.UserManagement
         /// <param name="EmailCode"></param>
         /// <param name="ActivateLink"></param>
         /// <returns></returns>
-        public bool SendEmail(string EmailId, string User, string Subject, string Body, string Headeraname)
+        /// 
+        //public async Task<bool> SendEmailAsync(string EmailId, string User, string Subject, string Body, string HeaderName)
+        //{
+        //    try
+        //    {
+
+        //        string accessToken = await GetAccessTokenAsync();
+
+        //        var message = new MimeMessage();
+        //        message.From.Add(new MailboxAddress(HeaderName, _emailSettings.AdminMail));
+        //        message.To.Add(new MailboxAddress("", EmailId));
+        //        message.Subject = Subject;
+
+        //        var bodyBuilder = new BodyBuilder { HtmlBody = Body };
+        //        message.Body = bodyBuilder.ToMessageBody();
+
+        //        using var client = new MailKit.Net.Smtp.SmtpClient();
+        //        await client.ConnectAsync(_emailSettings.SMTP_Host, _emailSettings.SMTP_Port, SecureSocketOptions.StartTls);
+        //        await client.AuthenticateAsync(new SaslMechanismOAuth2(_emailSettings.Username, accessToken));
+        //        await client.SendAsync(message);
+        //        await client.DisconnectAsync(true);
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log error
+        //        return false;
+        //    }
+        //}
+
+        public async Task<bool> SendEmailAsync(string EmailId, string User, string Subject, string Body, string HeaderName)
+        {
+            try
+            {
+            
+                string accessToken = await GetAccessTokenAsync();
+
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(HeaderName, _configuration["EmailSettings:AdminMail"]));
+                message.To.Add(new MailboxAddress("", EmailId));
+                message.Subject = Subject;
+
+                var bodyBuilder = new BodyBuilder { HtmlBody = Body };
+                message.Body = bodyBuilder.ToMessageBody();
+
+                using var client = new MailKit.Net.Smtp.SmtpClient();
+                await client.ConnectAsync(_configuration["EmailSettings:SMTP_Host"], Convert.ToInt32(_configuration["EmailSettings:SMTP_Port"]), SecureSocketOptions.StartTls);
+                await client.AuthenticateAsync(new SaslMechanismOAuth2(_configuration["EmailSettings:Username"], accessToken));
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log error
+                return false;
+            }
+        }
+
+        //using var client = new HttpClient();
+        //var request = new HttpRequestMessage(HttpMethod.Post, _emailSettings.OAuth.TokenUrl);
+        //request.Content = new FormUrlEncodedContent(new[]
+        //{
+        //new KeyValuePair<string, string>("client_id", _emailSettings.OAuth.ClientId),
+        //new KeyValuePair<string, string>("client_secret", _emailSettings.OAuth.ClientSecret),
+        //new KeyValuePair<string, string>("grant_type", "client_credentials"),
+        //new KeyValuePair<string, string>("scope", "https://mail.google.com/") // Change based on provider
+        public async Task<string> GetAccessTokenAsync()
+        {
+            var emailSettings = _configuration.GetSection("EmailSettings").Get<EmailSettings>();
+
+            using var client = new HttpClient();
+            var request = new HttpRequestMessage(HttpMethod.Post, emailSettings?.OAuth?.TokenUrl);
+            request.Content = new FormUrlEncodedContent(new[]
+            {
+            new KeyValuePair<string, string>("client_id", emailSettings.OAuth.ClientId),
+            new KeyValuePair<string, string>("client_secret", emailSettings.OAuth.ClientSecret),
+           new KeyValuePair<string, string>("refresh_token", emailSettings.OAuth.RefreshToken), // Use stored refresh token
+        new KeyValuePair<string, string>("grant_type", "refresh_token")
+  
+
+        });
+
+            var response = await client.SendAsync(request);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            using var jsonDoc = JsonDocument.Parse(responseBody);
+            return jsonDoc.RootElement.GetProperty("access_token").GetString();
+        }
+        public async Task<bool> SendEmailAsync1(string EmailId, string User, string Subject, string Body, string Headeraname)
         {
 
             SmtpClient client = new SmtpClient();
@@ -2162,11 +2675,9 @@ namespace LabelPad.Repository.UserManagement
                 return true;
             }
         }
-        #endregion
         public async Task<dynamic> BulkInsertUsersFromExcel(IFormFile file)
         {
-            try
-            {
+           
                 if (file == null || file.Length == 0)
                     return new { Status = "-100", Message = "Invalid file" };
 
@@ -2270,7 +2781,7 @@ namespace LabelPad.Repository.UserManagement
                             myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                             string body = myString;
-                            SendEmail(user.Email, user.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
+                            SendEmailAsync(user.Email, user.FirstName, "Set Password from Go Permit", body, "GOPERMIT_Set Password");
                         }
                     }
 
@@ -2278,11 +2789,30 @@ namespace LabelPad.Repository.UserManagement
                 return new { Status = "200", Message = "Users inserted successfully", Result = users.Count };
                 
 
-            }
-            catch (Exception ex)
-            {
-                return new { Status = "-500", Message = "Error occurred", Error = ex.Message };
-            }
         }
+
+        //public async Task<string> GetAccessTokenAsync()
+        //{
+        //    var tokenResponse = new Google.Apis.Auth.OAuth2.Responses.TokenResponse
+        //    {
+        //        RefreshToken = _configuration["OAuth_Refresh_Token"],
+        //    };
+        //    var credential = new UserCredential(
+        //        new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+        //        {
+        //            ClientSecrets = new ClientSecrets
+        //            {
+        //                ClientId = _configuration["OAuth_Client_Id"],
+        //                ClientSecret = _configuration["OAuth_Client_Secret"],
+        //            }
+        //        }),
+        //        "user",
+        //        tokenResponse);
+
+        //    await credential.RefreshTokenAsync(CancellationToken.None);
+        //    return credential.Token.AccessToken;
+        //}
+
+
     }
 }

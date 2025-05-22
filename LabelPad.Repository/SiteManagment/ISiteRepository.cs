@@ -16,6 +16,7 @@ namespace LabelPad.Repository.SiteManagment
         Task<dynamic> CloseTicket(int Id);
         Task<dynamic> GetSupportAdminById(int Id);
         Task<dynamic> GetVisitorParkings(string TenantId);
+        Task<dynamic> GetVisitorParkingsById(string tenantid,string id);
         Task<dynamic> GetManageParkings(string TenantId);
         Task<dynamic> UpdateSupport(GetSupportCls obj);
         Task<dynamic> GetSupportListAdmin(int PageNo, int PageSize, int SiteId);
@@ -25,6 +26,8 @@ namespace LabelPad.Repository.SiteManagment
         Task<dynamic> saveauditlog(Auditlog objsite);
         Task<dynamic> saveauditlogfornotification(Auditlog objsite);
         Task<dynamic> GetSites(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId);
+        Task<dynamic> GetSitesbyoperatorid(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId,int OperatorId);
+
         Task<List<Site>> GetSiteslogin(int LoginId);
         Task<dynamic> GetSiteById(int Id);
         bool GetExistsSite(AddSiteAc objsite);

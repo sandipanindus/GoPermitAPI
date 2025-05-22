@@ -15,7 +15,7 @@ namespace LabelPadCoreApi.Models
         /// 
         /// </summary>
         /// <param name="Message"></param>
-        public static void InfoLogs(string Message)
+        private static void WriteLog(string logType, string Message)
         {
             string fullpath = "";
             try
@@ -59,5 +59,20 @@ namespace LabelPadCoreApi.Models
             }
         }
         #endregion
+
+        public static void InfoLogs(string Message)
+        {
+            WriteLog("Info", Message);
+        }
+
+        public static void LogError(string Message)
+        {
+            WriteLog("Error", Message);
+        }
+
+        public static void LogWarning(string Message)
+        {
+            WriteLog("Warning", Message);
+        }
     }
 }

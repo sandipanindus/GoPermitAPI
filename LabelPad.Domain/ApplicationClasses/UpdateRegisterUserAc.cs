@@ -41,4 +41,11 @@ namespace LabelPad.Domain.ApplicationClasses
         public bool Active { get; set; }
         public int SiteId { get; set; }
     }
+
+    public class OperatorLogoRequest
+    {
+        public int Id { get; set; }
+
+        public string OperatorLogo { get; set; }
+    }
 }

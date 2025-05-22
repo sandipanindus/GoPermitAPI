@@ -30,12 +30,18 @@ namespace LabelPad.Domain.ApplicationClasses
         public string VSeperator { get; set; }
         public int Total { get; set; }
         public int VehiclesPerBay { get; set; }
+        
+        public int IndustryId { get; set; }
+
+        public int OperatorId { get; set; }
         public string maxparkingsession { get; set; }
         public string TimeUnit { get; set; }
         public string SiteCode { get; set; }
+        public string EnforcementService { get; set; }
         public List<ParkingBays> ParkingBays { get; set; }
         public List<VisitorBays> VisitorBays { get; set; }
         public List<VisitorSession> VisitorSessions { get; set; }
+        public string APIKey { get; set; }
     }
     public class ParkingBays
     {
