@@ -728,6 +728,15 @@ namespace LabelPad.Repository.SiteManagment
                         }
 
                     }
+                    var vehicleregistration2 = _dbContext.VehicleRegistrations.Where(x => x.Id == Id && x.ParkingBayNo == Bayno && x.IsActive == true && x.IsDeleted == false).Count();
+                    if (vehicleregistration2 < 1)
+                    {
+                        var parkingBays = _dbContext.ParkingBayNos.Where(x => x.Id == Bayno && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+
+                        parkingBays.UpdatedBy = null;
+                        _dbContext.ParkingBayNos.Update(parkingBays);
+                        _dbContext.SaveChanges();
+                    }
                 }
                 return new { Message = "Deleted Successfully" };
             }

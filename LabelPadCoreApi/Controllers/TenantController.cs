@@ -495,6 +495,8 @@ namespace LabelPadCoreApi.Controllers
                     myString = readFile;
 
                     myString = myString.Replace("%{#{Name}#}%", user.FirstName);
+                    myString = myString.Replace("%{#{CaseId}#}%", objdata.TicketId.ToString());
+                    myString = myString.Replace("%{#{Subject}#}%", objdata.Subject);
                     string body = myString;
                     bool key = await SendEmail(user.Email, user.FirstName, "We will Contact Shortly !", body, "GOPERMIT_Contact");
                     folderName = Path.Combine("EmailHtml", "SupportAdmin.html");
@@ -516,6 +518,7 @@ namespace LabelPadCoreApi.Controllers
                     myString = myString.Replace("%{#{Email}#}%", user.Email);
                     myString = myString.Replace("%{#{Address}#}%", user.Address);
                     myString = myString.Replace("%{#{Issue}#}%", objdata.Issue);
+                    myString = myString.Replace("%{#{Ticket no}#}%", objdata.TicketId.ToString());
                     body = myString;
                     string email = _configuration["EmailSettings:AdminMail"];
                     key = await SendEmail(email, "Admin", objdata.Subject, body, "GOPERMIT_Admin");

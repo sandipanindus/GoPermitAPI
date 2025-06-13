@@ -481,6 +481,7 @@ namespace LabelPad.Repository.TenantManagement
                                Subject = d.Subject,
                                IsRead = d.IsRead,
                                message = d.Issue,
+                               status = d.Status,
                            }).OrderByDescending(x => x.Id).ToList();
             for (int i = 0; i < support.Count; i++)
             {
@@ -1023,6 +1024,8 @@ namespace LabelPad.Repository.TenantManagement
 
                         _dbContext.VehicleRegistrationTimeSlots.UpdateRange(responce);
                         await _dbContext.SaveChangesAsync();
+
+                        _userRepository.Updatewhitelistvehicle(Convert.ToInt32(user.SiteId), input.vrm);
                     }
                     if (input.dates != "")
                     {

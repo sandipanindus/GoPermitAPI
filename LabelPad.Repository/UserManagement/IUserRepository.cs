@@ -15,7 +15,7 @@ namespace LabelPad.Repository.UserManagement
         Task<dynamic> AddUser(AddUserAc addUser);
         Task<dynamic> UpdateTenantUser_New(AddTenantUser addUserAc);
         Task<dynamic> UpdateUser(AddUserAc addUserAc);
-        Task<dynamic> GetTenantUsers(int PageNo,int PageSize,int LoginId,int RoleId,int SiteId);
+        Task<dynamic> GetTenantUsers(int PageNo,int PageSize,int LoginId,int RoleId,int SiteId, int OperatorId);
         Task<dynamic> GetUsers(int PageNo, int PageSize,int LoginId,int RoleId,int SiteId);
         Task<dynamic> GetOpeartoruser(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId);
         Task<dynamic> GetSiteUser(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId);
@@ -32,6 +32,7 @@ namespace LabelPad.Repository.UserManagement
         Task<dynamic> AddTenant(UpdateRegisterUserAc model);
         //void Cancelwhitelistvehicle(int siteId, string vrm);
         void whitelistvehicle(int siteId, string vrm);
+        void Updatewhitelistvehicle(int siteId, string vrm);
         void whitelistvehicleforvisitor(int siteId, string vrm);
         bool GetTenant(UpdateRegisterUserAc addRegister);
        Task<dynamic> GetSearchUsers(int PageNo, int PageSize, string FirstName, string LastName, string Email,string SiteName, int LoginId, int RoleId, int SiteId);

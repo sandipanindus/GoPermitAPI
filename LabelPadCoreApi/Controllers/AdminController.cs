@@ -1624,7 +1624,62 @@ namespace LabelPadCoreApi.Controllers
                         myString = readFile;
                         string dt = DateTime.Now.ToString("dd-MM-yyyy");
                         myString = myString.Replace("%{#{Datetime}#}%", dt);
-                        myString = myString.Replace("%{#{Name}#}%", addUser.FirstName + " " + addUser.LastName);
+                        myString = myString.Replace("%{#{Name}#}%", addUser.FirstName );
+                        myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
+
+                        string body = myString;
+                        bool key = await _userRepository.SendEmailAsync(addUser.Email, addUser.FirstName, "Set Password from Go permit", body, "GOPERMIT_Set Password");
+                        if (key == true)
+                        {
+                            return Ok(new ApiServiceResponse() { Status = "200", Message = "Check your mail for reset password link", Result = null });
+                        }
+                        else
+                        {
+                            return Ok(new ApiServiceResponse() { Status = "-100", Message = "Sending mail error occured", Result = null });
+                        }
+                        //  return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = addUser });
+                    }
+                    else
+                    {
+                        return Ok(new ApiServiceResponse() { Status = "-100", Message = "Failure", Result = addUser });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                //AppLogs.InfoLogs("Error occured in the AddUser Method,Controller:Admin" + ex.ToString());
+                return Ok(new ApiServiceResponse() { Status = "-100", Message = ex.ToString(), Result = null });
+            }
+        }
+
+
+        [HttpPost("AddOperatorUser")]
+        public async Task<IActionResult> AddOperatorUser([FromBody] AddUserAc addUser)
+        {
+            try
+            {
+                //AppLogs.InfoLogs("AddUser Method was started,Controller:Admin");
+                if (_userRepository.GetExistsUser(addUser))
+                {
+                    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Already Exists with that email or contact number", Result = addUser });
+                }
+                else
+                {
+                    var result = await _userRepository.AddUser(addUser);
+                    if (result != null)
+                    {
+                        string returnlink = _configuration["SetPasswordUrl"];
+                        var folderName = Path.Combine("EmailHtml", "OperatorSetPassword.html");
+                        var filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                        StreamReader reader = new StreamReader(filePath);
+                        var resetLink = returnlink + addUser.EmailCode;
+                        string readFile = reader.ReadToEnd();
+                        string myString = "";
+                        myString = readFile;
+                        string dt = DateTime.Now.ToString("dd-MM-yyyy");
+                        myString = myString.Replace("%{#{Datetime}#}%", dt);
+                        myString = myString.Replace("%{#{Name}#}%", addUser.FirstName);
                         myString = myString.Replace("%{#{PasswordLink}#}%", resetLink);
 
                         string body = myString;
@@ -2154,12 +2209,12 @@ namespace LabelPadCoreApi.Controllers
         /// <param name="SiteId"></param>
         /// <returns></returns>
         [HttpGet("GetTenantUsers")]
-        public async Task<IActionResult> GetTenantUsers(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId)
+        public async Task<IActionResult> GetTenantUsers(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId, int OperatorId)
         {
             try
             {
                 //AppLogs.InfoLogs("GetUsers Method was started,Controller:Admin");
-                var roles = await _userRepository.GetTenantUsers(PageNo, PageSize, LoginId, RoleId, SiteId);
+                var roles = await _userRepository.GetTenantUsers(PageNo, PageSize, LoginId, RoleId, SiteId, OperatorId);
                 return Ok(new ApiServiceResponse() { Status = "200", Message = "Success", Result = roles });
             }
             catch (Exception ex)
@@ -2749,43 +2804,44 @@ namespace LabelPadCoreApi.Controllers
                 var support = _tenantRepository.ReplySupport(obj);
                 if (support != null)
                 {
-                    return Ok(new ApiServiceResponse() { Status = "200", Message = "Response send successfully", Result = null });
 
-                    //var folderName = Path.Combine("EmailHtml", "Response.html");
-                    //var filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
-                    //StreamReader reader = new StreamReader(filePath);
-                    //int ticketid = obj.TicketId;
-                    //string name = string.Empty;
-                    //string email = string.Empty;
-                    //RegisterUser user = new RegisterUser();
-                    //var visitor = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == ticketid).FirstOrDefault();
-                    //if (visitor != null)
-                    //{
-                    //    user = _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == visitor.RegisterUserId).FirstOrDefault();
-                    //    if (user != null)
-                    //    {
-                    //        name = user.FirstName + " " + user.LastName;
-                    //        email = user.Email;
-                    //    }
-                    //}
-                   
-                    //string readFile = reader.ReadToEnd();
-                    //string myString = "";
-                    //myString = readFile;
-                    //myString = myString.Replace("%{#{Name}#}%", name);
-                    //myString = myString.Replace("%{#{Response}#}%", obj.Issue);
-                    //string body = myString;
-                    //bool key = await _userRepository.SendEmailAsync(email, name, obj.Subject, body, "GOPERMIT_Responce");
+                    var folderName = Path.Combine("EmailHtml", "Response.html");
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                    StreamReader reader = new StreamReader(filePath);
+                    int ticketid = obj.TicketId;
+                    string name = string.Empty;
+                    string email = string.Empty;
+                    RegisterUser user = new RegisterUser();
+                    var visitor = _dbContext.Supports.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == ticketid).FirstOrDefault();
+                    if (visitor != null)
+                    {
+                        user = _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == visitor.RegisterUserId).FirstOrDefault();
+                        if (user != null)
+                        {
+                            name = user.FirstName + " " + user.LastName;
+                            email = user.Email;
+                        }
+                    }
+
+                    string readFile = reader.ReadToEnd();
+                    string myString = "";
+                    myString = readFile;
+                    myString = myString.Replace("%{#{Name}#}%", name);
+                    myString = myString.Replace("%{#{Response}#}%", obj.Issue);
+                    string body = myString;
+                    bool key = await _userRepository.SendEmailAsync(email, name, obj.Subject, body, "GOPERMIT_Responce");
 
 
-                    //if (key == true)
-                    //{
-                    //    return Ok(new ApiServiceResponse() { Status = "200", Message = "Response send successfully", Result = null });
-                    //}
-                    //else
-                    //{
-                    //    return Ok(new ApiServiceResponse() { Status = "-100", Message = "Mail sending error occured", Result = null });
-                    //}
+                    if (key == true)
+                    {
+                        return Ok(new ApiServiceResponse() { Status = "200", Message = "Response send successfully", Result = null });
+
+                    }
+                    else
+                    {
+                        return Ok(new ApiServiceResponse() { Status = "-100", Message = "Mail sending error occured", Result = null });
+                    }
+
                 }
                 else
                 {

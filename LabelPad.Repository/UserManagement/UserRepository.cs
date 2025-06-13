@@ -394,6 +394,247 @@ namespace LabelPad.Repository.UserManagement
         }
 
 
+
+        public void Updatewhitelistvehicle(int siteId, string vrm)
+        {
+            string apikey = string.Empty; string apiurl = string.Empty;
+
+            // apikey = _configuration["ZatparkApiKey"];
+
+            //Common.InfoLogs("Config files read");
+            string referenceno = string.Empty;
+            string referencenew = string.Empty;
+            string sitecode = string.Empty;
+            string startdate = string.Empty;
+            string enddate = string.Empty;
+            //Common.InfoLogs("Before fetching sites");
+            var sites = _dbContext.Sites.Where(x => x.Id == siteId && x.IsActive == true && x.IsDeleted == false).FirstOrDefault(); //Util.GetSites();
+            apikey = sites.APIKey;
+            apiurl = _configuration["ZatparkUrl"];
+            // Common.InfoLogs("site Fetched");
+            if (sites != null)
+            {
+                bool zatparkhours = sites.Zatparklogs24hrs;
+                //ArrayList array = new ArrayList();
+                //array.Add(siteId);
+                //array.Add(1);
+                var vehicles = (from v in _dbContext.VehicleRegistrations
+                                join t in _dbContext.VehicleRegistrationTimeSlots on v.Id equals t.VehicleRegistrationId
+                                join u in _dbContext.RegisterUsers on v.RegisterUserId equals u.Id
+                                join s in _dbContext.Sites on u.SiteId equals s.Id
+                                where v.IsActive == true && v.IsDeleted == false && s.Id == siteId && v.VRM == vrm && v.IsSentToZatPark == true
+                                //where c.RegisterUserId == Id && c.IsActive == true && c.IsDeleted == false
+                                select new
+                                {
+                                    t.Id,
+                                    t.FromDate,
+                                    t.ToDate,
+                                    VFromDate = v.StartDate,
+                                    VToDate = v.EndDate,
+                                    v.VRM,
+                                    s.ZatparkSitecode,
+                                    vehicleregid = v.Id,
+                                }
+                          ).FirstOrDefault();
+                //Util.GetVehicleDetails(array);
+                //Guid obj = Guid.NewGuid();
+                //referenceno = obj.ToString();
+                referenceno = "GP" + Convert.ToString(vehicles.vehicleregid);
+                sitecode = vehicles.ZatparkSitecode;
+                startdate = Convert.ToDateTime(vehicles.VFromDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicles.VFromDate).ToString("HH:mm");
+                enddate = Convert.ToDateTime(vehicles.VToDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicles.VToDate).ToString("HH:mm");
+                vrm = vehicles.VRM;
+
+                string requeststr = "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}";
+
+                RestClient client = new RestClient(apiurl);
+                RestRequest request = new RestRequest("update_permit", Method.POST);
+                request.AddParameter("permit_data", "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}");
+                request.AddHeader("HTTPS_AUTH", apikey);
+                var response = client.Execute(request);
+
+                var vehicleslots = (from v in _dbContext.VehicleRegistrations
+                                    join t in _dbContext.VehicleRegistrationTimeSlots on v.Id equals t.VehicleRegistrationId
+                                    join u in _dbContext.RegisterUsers on v.RegisterUserId equals u.Id
+                                    join s in _dbContext.Sites on u.SiteId equals s.Id
+                                    where v.IsActive == true && v.IsDeleted == false && s.Id == siteId && v.VRM == vrm && v.IsSentToZatPark == true
+                                    //where c.RegisterUserId == Id && c.IsActive == true && c.IsDeleted == false
+                                    select new
+                                    {
+                                        t.Id,
+                                        t.FromDate,
+                                        t.ToDate,
+                                        v.VRM,
+                                        s.ZatparkSitecode,
+                                        vehicleregid = v.Id,
+                                    }
+                         ).ToList();
+
+                if (vehicleslots != null && vehicleslots.Count > 0)
+                {
+                    foreach (var vehicle in vehicleslots)
+                    {
+                        referenceno = vehicle.Id.ToString();
+                        //referencenew = ds.Tables[0].Rows[i]["ReferenceNo"].ToString();
+                        sitecode = vehicle.ZatparkSitecode;
+                        //sitecode = "eur0011-500";
+                        startdate = Convert.ToDateTime(vehicle.FromDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicle.FromDate).ToString("HH:mm");
+                        enddate = Convert.ToDateTime(vehicle.ToDate).ToString("yyyy-MM-dd") + " " + Convert.ToDateTime(vehicle.ToDate).ToString("HH:mm");
+                        vrm = vehicle.VRM;
+                        // Common.InfoLogs("ZatparkUpdate method was started vrm= " + vrm + " referencenew= " + referenceno + " startdate= " + startdate + " enddate= " + enddate);
+
+                        string requeststr1 = "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}";
+
+                        //RestClient client1 = new RestClient(apiurl);
+                        //RestRequest request1 = new RestRequest("add_permit", Method.POST);
+                        //request1.AddParameter("permit_data", "{\"reference_no\":\"" + referenceno + "\",\"site_code\":\"" + sitecode + "\",\"start_date\":\"" + startdate + "\",\"end_date\":\"" + enddate + "\",\"vehicle_details\":{\"vrm\":\"" + vrm + "\"}}");
+                        //request.AddHeader("HTTPS_AUTH", apikey);
+                        ////var response = client.Execute(request);
+                        if (response.IsSuccessful)
+                        {
+                            string xml = response.Content;
+                            XmlDocument doc = new XmlDocument();
+                            doc.LoadXml(xml);
+                            string JsonValue = JsonConvert.SerializeXmlNode(doc);
+                            //Common.InfoLogs("Zatparkapi was excuted " + JsonValue);
+                            string myJsonResponse = JsonValue.Replace("?xml", "xml1");
+
+                            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
+                            if (myDeserializedClass.xml.status_code == "0" && myDeserializedClass.xml.error == "0")
+                            {
+                                ArrayList list = new ArrayList();
+                                list.Add(Convert.ToInt32(referenceno));
+                                list.Add(true);
+                                list.Add(requeststr);
+                                list.Add(JsonValue);
+                                list.Add(myDeserializedClass.xml.message);
+                                var slots = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots.IsSentToZatPark = true;
+                                    slots.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots.Request = requeststr;
+                                    slots.Response = JsonValue;
+                                    slots.SentToZatparkDateTime = DateTime.Now;
+                                    slots.UpdatedOn = DateTime.Now;
+                                    slots.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
+                                    _dbContext.SaveChanges();
+                                }
+
+                                //added code for VehicleRegistration table on 21/03/24
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = true;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VehicleRegistrations.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+
+                            }
+                            if (myDeserializedClass.xml.status_code == "25" && myDeserializedClass.xml.error == "0")
+                            {
+
+                                //DataSet dataset = Util.UpdateVehicleDetails(list);
+                                var slots = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots.IsSentToZatPark = false;
+                                    slots.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots.Request = requeststr;
+                                    slots.Response = JsonValue;
+                                    slots.SentToZatparkDateTime = DateTime.Now;
+                                    slots.UpdatedOn = DateTime.Now;
+                                    slots.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
+                                    _dbContext.SaveChanges();
+                                }
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots.IsSentToZatPark = false;
+                                    slots.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots.Request = requeststr;
+                                    slots.Response = JsonValue;
+                                    slots.SentToZatparkDateTime = DateTime.Now;
+                                    slots.UpdatedOn = DateTime.Now;
+                                    slots.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VehicleRegistrations.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+                            }
+                            if (myDeserializedClass.xml.status_code == "1" || myDeserializedClass.xml.error == "1")
+                            {
+
+                                //DataSet dataset = Util.UpdateVehicleDetails(list);
+                                var slots = _dbContext.VehicleRegistrationTimeSlots.Where(x => x.Id == vehicle.Id && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots.IsSentToZatPark = false;
+                                    slots.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots.Request = requeststr;
+                                    slots.Response = JsonValue;
+                                    slots.SentToZatparkDateTime = DateTime.Now;
+                                    slots.UpdatedOn = DateTime.Now;
+                                    slots.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VehicleRegistrationTimeSlots.UpdateRange(slots);
+                                    _dbContext.SaveChanges();
+                                }
+                                var slots1 = _dbContext.VehicleRegistrations.Where(x => x.Id == vehicle.vehicleregid && x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+                                if (slots1 != null)
+                                {
+                                    //slots.ForEach(x =>
+                                    //{
+                                    slots1.IsSentToZatPark = false;
+                                    slots1.ZatparkResponse = myDeserializedClass.xml.message;
+                                    slots1.Request = requeststr;
+                                    slots1.Response = JsonValue;
+                                    slots1.SentToZatparkDateTime = DateTime.Now;
+                                    slots1.UpdatedOn = DateTime.Now;
+                                    slots1.UpdatedBy = 1;
+                                    //});
+
+                                    _dbContext.VehicleRegistrations.UpdateRange(slots1);
+                                    _dbContext.SaveChanges();
+                                }
+                            }
+                        }
+
+                    }
+
+
+
+                }
+            }
+        }
+
+
         public void whitelistvehicleforvisitor(int siteId, string vrm)
         {
             string apikey = string.Empty; string apiurl = string.Empty;
@@ -1147,11 +1388,13 @@ namespace LabelPad.Repository.UserManagement
 
                 foreach (var record in vehicleRecords)
                 {
-                    if (record.RegisterUserId == Id)
-                        record.RegisterUserId = 0;
+                    record.IsActive = false;
+                    record.IsDeleted = true;
+                    //if (record.RegisterUserId == Id)
+                    //    record.RegisterUserId = 0;
 
-                    if (record.UpdatedBy == Id)
-                        record.UpdatedBy = 0;
+                    //if (record.UpdatedBy == Id)
+                    //    record.UpdatedBy = 0;
 
                     record.UpdatedOn = DateTime.Now;
                 }
@@ -1170,7 +1413,7 @@ namespace LabelPad.Repository.UserManagement
 
         public bool GetExistsTenantUser(AddTenantUser addUserAc)
         {
-            RegisterUser user = _dbContext.RegisterUsers.FirstOrDefault(x => (x.Email == addUserAc.Email || x.MobileNumber == addUserAc.MobileNumber) && x.IsDeleted == false && x.RoleId == 2);
+            RegisterUser user = _dbContext.RegisterUsers.FirstOrDefault(x => (x.Email == addUserAc.Email || x.MobileNumber == addUserAc.MobileNumber) && x.IsDeleted == false );
             return (user != null);
 
         }
@@ -1356,7 +1599,7 @@ namespace LabelPad.Repository.UserManagement
             RegisterUser user = await _dbContext.RegisterUsers.FirstOrDefaultAsync(x => x.IsDeleted == false && x.Id == Id);
             return user;
         }
-        public async Task<dynamic> GetTenantUsers(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId)
+        public async Task<dynamic> GetTenantUsers(int PageNo, int PageSize, int LoginId, int RoleId, int SiteId, int OperatorId)
         {
             int count1 = PageSize;
             int count2 = count1 * PageNo - count1;
@@ -1426,24 +1669,78 @@ namespace LabelPad.Repository.UserManagement
             }
             else
             {
-                int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == 2 && x.SiteId == SiteId).Count();
+                //var sites = _dbContext.Sites.Where(x => x.IsDeleted == false && x.OperatorId == OperatorId);
+                //int totalitems = _dbContext.RegisterUsers.Where(x => x.IsDeleted == false && x.RoleId == 2 && x.SiteId == SiteId).Count();
+                //double totalpa = (double)totalitems / (double)PageSize;
+                //double totalpage = Math.Round(totalpa);
+                //var users = (from l in _dbContext.RegisterUsers
+                //             join r in _dbContext.Roles on l.RoleId equals r.Id
+                //             //join v in _dbContext.VehicleRegistrations on l.Id equals v.RegisterUserId
+                //             //join s in _dbContext.Sites on l.SiteId equals s.Id
+                //             where l.IsDeleted == false
+                //             //&& v.IsDeleted == false
+                //             //&& s.IsDeleted == false && s.IsActive == true
+                //             && l.RoleId == 2
+                //             //&& s.Id == SiteId
+                //             select new
+                //             {
+                //                 pageNo = PageNo,
+                //                 l.Id,
+                //                 l.FirstName,
+
+                //                 l.LastName,
+                //                 l.IsApproved,
+                //                 l.Email,
+                //                 l.MobileNumber,
+                //                 l.RoleId,
+                //                 RoleName = r.Name,
+                //                 TotalItem = totalitems,
+                //                 SiteId = l.SiteId,
+                //                 TotalPage = totalpage + 1,
+                //                 VRM = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == l.Id && x.IsDeleted == false).FirstOrDefault().VRM == null ? " " : _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == l.Id && x.IsDeleted == false).FirstOrDefault().VRM,
+                //                 SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? " " : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
+                //             }).OrderByDescending(x => x.Id).ToList();
+                //users = users.Where(x => x.SiteId == SiteId).ToList();
+                //users = users.Skip(count2).Take(count1).ToList();
+                //return users;
+
+
+                // Step 1: Get relevant site IDs only if OperatorId != 0
+                List<int> siteIds = new List<int>();
+                if (OperatorId != 0)
+                {
+                    siteIds = _dbContext.Sites
+                        .Where(x => !x.IsDeleted && x.OperatorId == OperatorId)
+                        .Select(x => x.Id)
+                        .ToList();
+                }
+
+                // Step 2: Get total count based on RoleId = 2 and optional SiteId filter
+                var userQuery = _dbContext.RegisterUsers
+                    .Where(x => !x.IsDeleted && x.RoleId == 2);
+
+                if (OperatorId != 0)
+                {
+                    userQuery = userQuery.Where(x => siteIds.Contains(x.SiteId));
+                }
+
+                if (SiteId != 0)
+                {
+                    userQuery = userQuery.Where(x => x.SiteId == SiteId);
+                }
+
+                int totalitems = userQuery.Count();
                 double totalpa = (double)totalitems / (double)PageSize;
                 double totalpage = Math.Round(totalpa);
-                var users = (from l in _dbContext.RegisterUsers
+
+                // Step 3: Fetch and project user data
+                var users = (from l in userQuery
                              join r in _dbContext.Roles on l.RoleId equals r.Id
-                             //join v in _dbContext.VehicleRegistrations on l.Id equals v.RegisterUserId
-                             //join s in _dbContext.Sites on l.SiteId equals s.Id
-                             where l.IsDeleted == false
-                             //&& v.IsDeleted == false
-                             //&& s.IsDeleted == false && s.IsActive == true
-                             && l.RoleId == 2
-                             //&& s.Id == SiteId
                              select new
                              {
                                  pageNo = PageNo,
                                  l.Id,
                                  l.FirstName,
-                                
                                  l.LastName,
                                  l.IsApproved,
                                  l.Email,
@@ -1453,12 +1750,21 @@ namespace LabelPad.Repository.UserManagement
                                  TotalItem = totalitems,
                                  SiteId = l.SiteId,
                                  TotalPage = totalpage + 1,
-                                 VRM = _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == l.Id && x.IsDeleted == false).FirstOrDefault().VRM == null ? " " : _dbContext.VehicleRegistrations.Where(x => x.RegisterUserId == l.Id && x.IsDeleted == false).FirstOrDefault().VRM,
-                                 SiteName = _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName == null ? " " : _dbContext.Sites.Where(x => x.Id == l.SiteId).FirstOrDefault().SiteName
-                             }).OrderByDescending(x => x.Id).ToList();
-                users = users.Where(x => x.SiteId == SiteId).ToList();
-                users = users.Skip(count2).Take(count1).ToList();
+                                 VRM = _dbContext.VehicleRegistrations
+                                         .Where(x => x.RegisterUserId == l.Id && !x.IsDeleted)
+                                         .Select(x => x.VRM)
+                                         .FirstOrDefault() ?? " ",
+                                 SiteName = _dbContext.Sites
+                                             .Where(x => x.Id == l.SiteId)
+                                             .Select(x => x.SiteName)
+                                             .FirstOrDefault() ?? " "
+                             }).OrderByDescending(x => x.Id)
+                               .Skip(count2)
+                               .Take(count1)
+                               .ToList();
+
                 return users;
+
             }
 
         }

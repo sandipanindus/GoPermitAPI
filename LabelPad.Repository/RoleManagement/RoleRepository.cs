@@ -47,15 +47,15 @@ namespace LabelPad.Repository.RoleManagement
         {
             var registerusers =  _dbContext.RegisterUsers.Where(x => x.IsActive == true && x.IsDeleted == false && x.RoleId == Id).ToList();
 
-            if (registerusers != null)
-            {
+            //if (registerusers != null)
+            //{
 
-                return new { Message = "No data found" };
+            //    return new { Message = "No data found" };
 
-            }
+            //}
 
-            else
-            {
+            //else
+            //{
 
 
                 Role role = await _dbContext.Roles.Where(x => x.IsActive == true && x.IsDeleted == false && x.Id == Id).FirstOrDefaultAsync();
@@ -70,7 +70,7 @@ namespace LabelPad.Repository.RoleManagement
 
                 }
                 return new { Message = "Role have users can't delete " };
-            }
+            //}
         }
 
         public async Task<Role> GetRoleById(int Id)

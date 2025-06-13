@@ -162,15 +162,10 @@
     <![endif]-->
 </head>
 <body class="o_body o_bg-light" style="width: 100%;margin: 0px;padding: 0px;-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;background-color: #dbe5ea;">
-   <!-- preview-text -->
-    <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
-        <tbody>
-            <tr>
-                <td class="o_hide" align="center" style="display: none;font-size: 0;max-height: 0;width: 0;line-height: 0;overflow: hidden;mso-hide: all;visibility: hidden;"></td>
-            </tr>
-        </tbody>
-    </table>
-    
+    <div style="display:none;font-size:1px;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;mso-hide:all;">
+        Hello %{#{Name}#}% Thanks for confirming you details and agreeing to the Terms & Conditions.&nbsp;&#847;
+    </div>
+    <!-- preview-text -->
     <!-- header -->
     <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
         <tbody>
@@ -181,14 +176,13 @@
                         <tbody>
                             <tr>
                                 <td class="o_bg-dark o_px o_py-md o_br-t o_sans o_text" align="center" style="font-family: Helvetica, Arial, sans-serif;margin-top: 0px;margin-bottom: 0px;font-size: 16px;line-height: 24px;background-color:#fff;border-radius: 4px 4px 0px 0px;padding-left: 16px;padding-right: 16px;padding-top: 24px;padding-bottom: 24px;">
-                                    <p style="margin-top: 0px;margin-bottom: 0px;"><a class="o_text-white" href="http://gopermit.co.uk" style="text-decoration: none;outline: none;color: #ffffff;"><img src="https://i.postimg.cc/8zgkC03V/logo.png" width="136" alt="Smartpermit" style="max-width: 136px;vertical-align: middle;border: 0;line-height: 100%;height: auto;outline: none;text-decoration: none;" /></a></p>
+                                    <p style="margin-top: 0px;margin-bottom: 0px;"><a class="o_text-white" href="http://gopermit.co.uk" style="text-decoration: none;outline: none;color: #ffffff;"><img src="https://hushstoryapi.fadelsoft.co.in/logo/logo.PNG" width="136" alt="Smartpermit" style="max-width: 100%;vertical-align: middle;border: 0;line-height: 100%;height: auto;outline: none;text-decoration: none;" /></a></p>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                     <!--[if mso]></td></tr></table><![endif]-->
                     <!--[if mso]><table width="632" cellspacing="0" cellpadding="0" border="0" role="presentation"><tbody><tr><td><![endif]-->
-                    
                     <!--[if mso]></td></tr></table><![endif]-->
                 </td>
             </tr>
@@ -208,7 +202,6 @@
                                         <tbody>
                                             <tr>
                                                 <!-- <td class="o_bb-primary" height="40" width="32" style="border-bottom: 1px solid #242b3d;">&nbsp; </td> -->
-                                               
                                                 <!-- <td class="o_bb-primary" height="40" width="32" style="border-bottom: 1px solid #242b3d;">&nbsp; </td> -->
                                             </tr>
                                             <tr>
@@ -221,13 +214,45 @@
                                             </tr>
                                         </tbody>
                                     </table>
-                                    <h2 class="o_heading o_text-dark o_mb-xxs" style="font-family: Helvetica, Arial, sans-serif;font-weight: bold;margin-top: 0px;margin-bottom: 1px;color: #242b3d;font-size: 30px;line-height: 10px;">Hello %{#{Name}#}%,</h2>
-                                    <br />
-                                    <p style="margin-top: 0px;margin-bottom: 0px;">We got your request and this email confirms that your request has been received by us.<br>Customer is our priority and we believe in solving each and any questions/issues from our Client.<br />A member of our team will get back to you shortly.</p>
+                                    <h2 class="o_heading o_text-dark o_mb-xxs" style="text-align: left; font-family: Helvetica, Arial, sans-serif;font-weight: bold;margin-top: 0px;margin-bottom: 1px;color: #242b3d;font-size: 30px;line-height: 10px;">Hello %{#{Name}#}% ,</h2>
+                                    </br>
+                                    <p style="text-align: left; margin-top: 20px;margin-bottom: 0px;color: #242b3d;">
+                                        Thank you for reaching out to us. This is a confirmation that we have received your request, and we’ve raised a ticket for your issue. Below are the details:
+                                    </p>
+                                    <p style="text-align: left; margin-bottom: 0px;color: #242b3d;">Case ID : <strong>%{#{CaseId}#}%</strong></p>
+                                    <p style="text-align: left; margin-bottom: 0px;color: #242b3d;">Subject : <strong>%{#{Subject}#}%</strong></p>
+                                    </br>
 
-                                   <!-- <a class="o_text-white" href="http://smartpermit.eisappserver.net/" style="text-decoration: none;outline: none;color: gold;display: block;padding: 12px 24px;mso-text-raise: 3px;"> Get started</a>-->
+                                    <p style="text-align: left; margin-top: 0px;margin-bottom: 0px;color: #242b3d;">
+                                        Our utmost priority is customer satisfaction, and our team is actively looking into your request. A member of our team will respond to you shortly. If you need further assistance or have any additional queries, feel free to reach out to us at support@gopermit.co.uk.
+                                    </p>
+                                    </br>
+
+
+                                    <p style="text-align: left; margin-top: 0px;margin-bottom: 0px;color: #242b3d;">Best regards,</p>
+                                    </br>
+                                    <p style="text-align: left; margin-top: 0px;margin-bottom: 0px;color: #242b3d;">GoPermit Team</p>
+
+
+
+
+                                    <!-- <p style="margin-top: 20px;margin-bottom: 0px; color: #242b3d;">Configure your parking bay</p>
+                                    <p style="margin-top: 0px;margin-bottom: 0px;color: #242b3d;">Book visitors to park in your carpark</p>
+                                    <p style="margin-top: 0px;margin-bottom: 10px; color: #242b3d;">Raise tickets for support</p> -->
+                                    <!-- <a class="o_text-white" href="http://smartpermit.eisappserver.net/" style="text-decoration: none;outline: none;color: gold;display: block;padding: 12px 24px;mso-text-raise: 3px;"> Get started</a>-->
 
                                     <br />
+
+
+
+                                    <!--<p style="margin-top: 0px;margin-bottom: 0px;">Cantankerously some hence this hey slept mastodon</p>-->                   <table align="center" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                                        <tbody>
+                                            <tr>
+                                                <td width="300" class="o_btn o_bg-primary o_br o_heading o_text" align="center" style="font-family: Helvetica, Arial, sans-serif;font-weight: bold;margin-top: 0px;margin-bottom: 0px;font-size: 16px;line-height: 24px;mso-padding-alt: 12px 12px;background-color:  #ef7123;border-radius: 4px;">
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                     <br />
                                 </td>
                             </tr>
@@ -238,52 +263,24 @@
             </tr>
         </tbody>
     </table>
-    <!-- footer -->
+
+    <!-- blue banner content -->
     <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
         <tbody>
             <tr>
-                <td class="o_bg-light o_px-xs o_pt-lg o_xs-pt-xs" align="center" style="background-color: #dbe5ea;padding-left: 8px;padding-right: 8px;padding-top: 0px;">
-                    <!--[if mso]><table width="632" cellspacing="0" cellpadding="0" border="0" role="presentation"><tbody><tr><td><![endif]-->
-                    
-                    <!--[if mso]></td></tr></table><![endif]-->
-                    <!--[if mso]><table width="632" cellspacing="0" cellpadding="0" border="0" role="presentation"><tbody><tr><td><![endif]-->
+                <td class="o_bg-light o_px-xs" align="center" style="background-color: #dbe5ea;padding-left: 8px;padding-right: 8px;">
                     <table class="o_block" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation" style="max-width: 632px;margin: 0 auto;">
                         <tbody>
                             <tr>
-                                <td class="o_bg-dark o_px o_py-md o_br-t o_sans o_text" align="center" style="font-family: Helvetica, Arial, sans-serif;margin-top: 0px;margin-bottom: 0px;font-size: 16px;line-height: 24px;background-color:#fff;border-radius: 4px 4px 0px 0px;">
-                                    <p style="margin-top: 0px;margin-bottom: 0px;"><a class="o_text-white" href="http://gopermit.co.uk" style="text-decoration: none;outline: none;color: #ffffff;"><img src="https://i.postimg.cc/8zgkC03V/logo.png" width="136" alt="Smartpermit" style="max-width: 100%;vertical-align: middle;border: 0;line-height: 100%;height: auto;outline: none;text-decoration: none;" /></a></p>
+                                <td class="o_bg-primary o_px-md o_py-lg o_sans o_text-md o_text-white" align="center" style="font-family: Helvetica, Arial, sans-serif;margin-top: 0px;margin-bottom: 0px;font-size: 19px;line-height: 28px;background-color: #071f4f;color: #ffffff;padding-left: 24px;padding-right: 24px;padding-top: 32px;padding-bottom: 32px;">
+                                    <h1 class="o_heading o_text-white o_mb-xs" style="font-family: Helvetica, Arial, sans-serif;font-weight: bold;margin-top: 0px;margin-bottom: 8px;color: #ffffff;font-size: 30px;line-height: 36px;">With Go Permit! 🚗✨</h1>
+                                    <p style="margin-top: 0px;margin-bottom: 0px;line-height: 24px;">Go Permit is designed to provide a fast and reliable permit management system, making parking management easier and efficient for you.</p>
+                                    <p style="margin-top: 20px;margin-bottom: 0px;line-height: 24px;">Email: <strong><a style="color: white !important;">support@gopermit.co.uk</a></p>
                                 </td>
+
                             </tr>
                         </tbody>
                     </table>
-                    <!--[if mso]></td></tr></table><![endif]-->
-                </td>
-            </tr>
-        </tbody>
-    </table>
-    
-     <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
-        <tbody>
-            <tr>
-                <td class="o_bg-light o_px-xs o_pb-lg o_xs-pb-xs" align="center" style="background-color: #dbe5ea;padding-left: 8px;padding-right: 8px;padding-bottom: 32px;">
-                    <!--[if mso]><table width="632" cellspacing="0" cellpadding="0" border="0" role="presentation"><tbody><tr><td><![endif]-->
-                    <table class="o_block" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation" style="max-width: 632px;margin: 0 auto;">
-                        <tbody>
-                            <tr>
-                                <td class="o_bg-white o_px-md o_py-lg o_bt-light o_br-b o_sans o_text-xs o_text-light" align="center" style="font-family: Helvetica, Arial, sans-serif;margin-top: 0px;margin-bottom: 0px;font-size: 14px;line-height: 21px;background-color: #ffffff;color: #82899a;border-top: 1px solid #d3dce0;border-radius: 0px 0px 4px 4px;padding-left: 24px;padding-right: 24px;padding-top: 32px;padding-bottom: 32px;">
-                                    <!--<p class="o_mb" style="margin-top: 0px;margin-bottom: 16px;">©2018 SimpleApp Inc</p>-->
-
-                                    <p class="o_mb" style="margin-top: 0px;margin-bottom: 16px;">
-
-                                        Email: <strong><a>support@gopermit.co.uk</a></strong>
-
-                                    </p>
-
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <!--[if mso]></td></tr></table><![endif]-->
                 </td>
             </tr>
         </tbody>
